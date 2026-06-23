@@ -947,12 +947,12 @@ class Task(models.Model):
     """Additional metadata for the task."""
 
     task_type = models.CharField(
-        max_length=20, choices=TASK_TYPE_CHOICES, default="celery"
+        max_length=100, choices=TASK_TYPE_CHOICES, default="celery"
     )
     """The type of task (instant, celery, or workflow)."""
 
     category = models.CharField(
-        max_length=30, choices=CATEGORY_CHOICES, null=True, blank=True
+        max_length=100, choices=CATEGORY_CHOICES, null=True, blank=True
     )
     """The category of the task (create, delete, ai_processing, etc.)."""
 

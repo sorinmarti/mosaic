@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                     ("workflow", "Workflow"),
                     ("system", "System"),
                 ],
-                max_length=30,
+                max_length=100,
                 null=True,
             ),
         ),
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                     ("workflow", "Workflow"),
                 ],
                 default="celery",
-                max_length=20,
+                max_length=100,
             ),
         ),
         migrations.AlterField(
