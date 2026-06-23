@@ -455,3 +455,80 @@ tr[data-bs-toggle="collapse"]:hover {
   white-space: nowrap;
 }
 
+
+/******* DJANGO-TABLES2 SORTING INDICATORS *******************************/
+
+/* Make sortable column headers visually distinct */
+th.orderable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+th.orderable:hover {
+    background-color: #f8f9fa;
+}
+
+/* Add sort indicator space after sortable headers */
+th.orderable a {
+    padding-right: 20px;
+    position: relative;
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+}
+
+th.orderable a:hover {
+    text-decoration: none;
+    color: #212529;
+}
+
+/* Ascending sort indicator (▲) */
+th.orderable.asc a::after {
+    content: " \25B2"; /* Unicode up triangle */
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: #212529;
+    font-weight: bold;
+}
+
+/* Descending sort indicator (▼) */
+th.orderable.desc a::after {
+    content: " \25BC"; /* Unicode down triangle */
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: #212529;
+    font-weight: bold;
+}
+
+/* Subtle indicator for unsorted but sortable columns */
+th.orderable:not(.asc):not(.desc) a::after {
+    content: " \25B4"; /* Unicode up triangle outline */
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.7em;
+    color: #ccc;
+    opacity: 0.5;
+}
+
+/* Show indicator more prominently on hover */
+th.orderable:not(.asc):not(.desc):hover a::after {
+    color: #999;
+    opacity: 1;
+}
+
+/* Highlight currently sorted column */
+th.orderable.asc,
+th.orderable.desc {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+

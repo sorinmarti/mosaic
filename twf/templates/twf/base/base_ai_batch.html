@@ -3,12 +3,8 @@
 {% load crispy_forms_tags %}
 
 {% block page_title %}
-    <div class="d-flex justify-content-between align-items-center pb-1 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
       <h1 class="mb-0" style="width: 100%;">{{ page_title }}</h1>
-      <a href="{{ ai_credentials_url }}" class="btn btn-sm btn-dark"
-         data-bs-toggle="tooltip" data-bs-placement="top" title="Go to credential settings">
-        <i class="fa fa-gear"></i>
-      </a>
     </div>
 {% endblock %}
 
@@ -18,17 +14,18 @@
     {% if not has_api_key %}
             <div class="alert alert-warning" role="alert">
                 <strong>Warning!</strong> You have not set up an API key yet.
-                Please <a href="{{ ai_credentials_url }}">set up API credentials</a> before using this feature.
+                Please <a href="{{ ai_credentials_url }}" id="credentials-link">set up API credentials</a> before using this feature.
             </div>
     {% endif %}
     {% if has_api_key %}
-        {% if multimodal_info %}
-        <div class="alert alert-info mb-3">
-            <i class="fas fa-image me-2"></i> <strong>Input capability:</strong> {{ multimodal_info }}
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">AI Batch Processing</h5>
+            </div>
+            <div class="card-body">
+                {% crispy form %}
+            </div>
         </div>
-        {% endif %}
-        
-        {% crispy form %}
         <div id="ai_result">
         </div>
     {% endif %}
@@ -76,25 +73,9 @@
                 }
             }
 
-            // Update multimodal info if present
-            if (config.multimodal_info) {
-                const multimodalAlert = $('.alert-info:has(.fa-image)');
-                if (multimodalAlert.length) {
-                    multimodalAlert.html('<i class="fas fa-image me-2"></i> <strong>Input capability:</strong> ' + config.multimodal_info);
-                    multimodalAlert.show();
-                } else if (config.multimodal) {
-                    // Create multimodal alert if it doesn't exist
-                    const alertHtml = '<div class="alert alert-info mb-3"><i class="fas fa-image me-2"></i> <strong>Input capability:</strong> ' + config.multimodal_info + '</div>';
-                    $('.lead').first().after(alertHtml);
-                }
-            } else {
-                // Hide multimodal alert if provider doesn't support it
-                $('.alert-info:has(.fa-image)').hide();
-            }
-
             // Update credentials URL
             if (config.credentials_url) {
-                $('a[href*="project_settings_credentials"]').attr('href', config.credentials_url);
+                $('#credentials-link').attr('href', config.credentials_url);
             }
 
             // Update credentials warning - only show if NO API KEY is present

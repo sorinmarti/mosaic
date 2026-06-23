@@ -1,5 +1,39 @@
 {% extends 'twf/base/base.html' %}
+{% load render_table from django_tables2 %}
+{% load twf_filters %}
+
+{% block page_title %}
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="mb-0" style="width: 100%;">Collections</h1>
+      <a href="{% url 'twf:project_collections_create' %}" class="btn btn-sm btn-dark"
+         data-bs-toggle="tooltip" data-bs-placement="top" title="Create a new collection">
+        <i class="fa fa-plus"></i>
+      </a>
+    </div>
+{% endblock %}
 
 {% block content %}
-    {% include 'twf/collections/info_card_collections.html' %}
+    <p class="lead">Organize your project's content into collections. Use filters to search or sort collections.</p>
+
+    <!-- Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Collection Filters</h5>
+            <span class="badge bg-light text-dark">
+                {% if request.GET and filter.qs %}
+                    {{ filter.qs|length }} collections found
+                {% else %}
+                    {{ table.rows|length }} collections
+                {% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            {% twf_filter filter %}
+        </div>
+    </div>
+
+    <!-- Collections Table -->
+    <div class="table-responsive">
+        {% render_table table %}
+    </div>
 {% endblock %}

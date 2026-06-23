@@ -1,6 +1,45 @@
 {% extends 'twf/base/base.html' %}
 
-
 {% block content %}
-    {% include 'twf/export/info_card_export.html' %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Export Overview</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Overview of export configurations and recent exports.</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3">Quick Actions</h6>
+                    <div class="list-group">
+                        <a href="{% url 'twf:export_configure' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-plus-circle me-2"></i>Create New Export Configuration
+                        </a>
+                        <a href="{% url 'twf:export_run' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-play-circle me-2"></i>Run Export Configuration
+                        </a>
+                        <a href="{% url 'twf:export_view_exports' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-file-archive me-2"></i>View Generated Exports
+                        </a>
+                        <a href="{% url 'twf:export_view_export_confs' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-cog me-2"></i>Manage Export Configurations
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="mb-3">Additional Options</h6>
+                    <div class="list-group">
+                        <a href="{% url 'twf:export_project' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-download me-2"></i>Mosaic Export
+                        </a>
+                        <a href="{% url 'twf:export_publication_metadata' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-edit me-2"></i>Edit Publication Metadata
+                        </a>
+                        <a href="{% url 'twf:export_to_zenodo' %}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-cloud-upload me-2"></i>Zenodo Connection
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

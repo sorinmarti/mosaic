@@ -1,4 +1,5 @@
 """Forms for the twf app."""
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
@@ -13,14 +14,14 @@ class LoginForm(AuthenticationForm):
         """Initialize the form."""
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
+        self.helper.form_method = "post"
         self.helper.layout = Layout(
-            'username',
-            'password',
+            "username",
+            "password",
             Div(
-                Submit('submit', 'Login', css_class='btn btn-dark'),
-                css_class='text-end pt-3'
-            )
+                Submit("submit", "Login", css_class="btn btn-dark"),
+                css_class="text-end pt-3",
+            ),
         )
 
 
@@ -31,15 +32,15 @@ class ChangePasswordForm(PasswordChangeForm):
         """Initialize the form."""
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
+        self.helper.form_method = "post"
         self.helper.layout = Layout(
-            'old_password',
-            'new_password1',
-            'new_password2',
+            "old_password",
+            "new_password1",
+            "new_password2",
             Div(
-                Submit('submit', 'Change Password', css_class='btn btn-dark'),
-                css_class='text-end pt-3'
-            )
+                Submit("submit", "Change Password", css_class="btn btn-dark"),
+                css_class="text-end pt-3",
+            ),
         )
 
 
@@ -48,31 +49,32 @@ class CreateUserForm(forms.ModelForm):
 
     class Meta:
         """Meta class for the form."""
+
         model = User
-        fields = ['username', 'email']
+        fields = ["username", "email"]
         widgets = {
-            'username': forms.TextInput(attrs={'placeholder': 'Username'}),
-            'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
+            "username": forms.TextInput(attrs={"placeholder": "Username"}),
+            "email": forms.EmailInput(attrs={"placeholder": "Email"}),
         }
 
     def __init__(self, *args, **kwargs):
         """Initialize the form."""
         super().__init__(*args, **kwargs)
 
-        self.fields['email'].required = True
+        self.fields["email"].required = True
 
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
+        self.helper.form_method = "post"
         self.helper.layout = Layout(
             Row(
-                Column('username', css_class='form-group col-6 mb-0'),
-                Column('email', css_class='form-group col-6 mb-0'),
-                css_class='row form-row'
+                Column("username", css_class="form-group col-6 mb-0"),
+                Column("email", css_class="form-group col-6 mb-0"),
+                css_class="row form-row",
             ),
             Div(
-                Submit('submit', 'Create User', css_class='btn btn-dark'),
-                css_class='text-end pt-3'
-            )
+                Submit("submit", "Create User", css_class="btn btn-dark"),
+                css_class="text-end pt-3",
+            ),
         )
 
 
@@ -81,8 +83,9 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         """Meta class for the form."""
+
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ["username", "first_name", "last_name", "email"]
 
     orcid = forms.CharField(max_length=19, required=False)
     affiliation = forms.CharField(max_length=255, required=False)
@@ -91,29 +94,29 @@ class UserProfileForm(forms.ModelForm):
         """Initialize the form."""
         super().__init__(*args, **kwargs)
 
-        self.fields['orcid'].initial = self.instance.profile.orc_id
-        self.fields['affiliation'].initial = self.instance.profile.affiliation
+        self.fields["orcid"].initial = self.instance.profile.orc_id
+        self.fields["affiliation"].initial = self.instance.profile.affiliation
 
         self.helper = FormHelper()
-        self.helper.form_method = 'post'
+        self.helper.form_method = "post"
         self.helper.layout = Layout(
             Row(
-                Column('username', css_class='form-group col-6 mb-0'),
-                Column('email', css_class='form-group col-6 mb-0'),
-                css_class='row form-row'
+                Column("username", css_class="form-group col-6 mb-0"),
+                Column("email", css_class="form-group col-6 mb-0"),
+                css_class="row form-row",
             ),
             Row(
-                Column('first_name', css_class='form-group col-6 mb-0'),
-                Column('last_name', css_class='form-group col-6 mb-0'),
-                css_class='row form-row'
+                Column("first_name", css_class="form-group col-6 mb-0"),
+                Column("last_name", css_class="form-group col-6 mb-0"),
+                css_class="row form-row",
             ),
             Row(
-                Column('orcid', css_class='form-group col-6 mb-0'),
-                Column('affiliation', css_class='form-group col-6 mb-0'),
-                css_class='row form-row'
+                Column("orcid", css_class="form-group col-6 mb-0"),
+                Column("affiliation", css_class="form-group col-6 mb-0"),
+                css_class="row form-row",
             ),
             Div(
-                Submit('submit', 'Save Changes', css_class='btn btn-dark'),
-                css_class='text-end pt-3'
-            )
+                Submit("submit", "Save Changes", css_class="btn btn-dark"),
+                css_class="text-end pt-3",
+            ),
         )

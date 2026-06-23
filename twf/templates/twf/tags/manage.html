@@ -1,0 +1,298 @@
+{% extends 'twf/base/base.html' %}
+
+{% block page_title %}
+    <h1>Manage Tags</h1>
+{% endblock %}
+
+{% block content %}
+    <p class="lead">Perform bulk operations on tags. Use this page to unpark tags, delete tags entirely, remove dictionary assignments, or clear enrichment data.</p>
+
+    <div class="row">
+        <!-- Bulk Operations -->
+        <div class="col-md-8 mb-4">
+            <!-- Global Tag Operations -->
+            <div class="card border-warning mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Global Tag Operations</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">These operations affect ALL tags in the project, regardless of type.</p>
+
+                    <!-- Unpark All Tags -->
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-8">
+                            <strong>Unpark All Tags</strong>
+                            <p class="text-muted small mb-0">Removes the parked status from all tags in the project, making them available for processing again.</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <button
+                                class="btn btn-warning show-confirm-modal"
+                                data-message="Are you sure you want to unpark all tags in this project?"
+                                data-redirect-url="{% url 'twf:reset_unpark_all_tags' %}">
+                                <i class="fas fa-unlock"></i> Unpark All
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Group All Tags -->
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-8">
+                            <strong class="text-success">Auto-Group All Tags</strong>
+                            <p class="text-muted small mb-0">Automatically assigns all unassigned tags to dictionary entries by matching variation text exactly. Only tags with exact matches in selected dictionaries will be grouped.</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <button
+                                class="btn btn-success show-confirm-modal"
+                                data-message="Auto-group all unassigned tags? This will match tags to dictionary entries by exact variation text."
+                                data-redirect-url="{% url 'twf:tags_manage_auto_group' %}">
+                                <i class="fas fa-magic"></i> Auto-Group
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remove All Dictionary Assignments -->
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-8">
+                            <strong class="text-warning">Remove All Grouping</strong>
+                            <p class="text-muted small mb-0">Removes all dictionary entry assignments from tags in the project. Tags will need to be re-grouped.</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <button
+                                class="btn btn-warning show-confirm-modal"
+                                data-message="Are you sure you want to remove all dictionary assignments? This will affect {{ total_grouped }} tags."
+                                data-redirect-url="{% url 'twf:tags_manage_remove_all_dict' %}">
+                                <i class="fas fa-unlink"></i> Remove All Grouping
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remove All Enrichment -->
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-8">
+                            <strong class="text-warning">Remove All Enrichment</strong>
+                            <p class="text-muted small mb-0">Removes all enrichment data (dates, verses, IDs) from tags in the project. Tags will need to be re-enriched.</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <button
+                                class="btn btn-warning show-confirm-modal"
+                                data-message="Are you sure you want to remove all enrichment data? This will affect {{ total_enriched }} tags."
+                                data-redirect-url="{% url 'twf:tags_manage_remove_all_enrichment' %}">
+                                <i class="fas fa-eraser"></i> Remove All Enrichment
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Delete All Tags -->
+                    <div class="row">
+                        <div class="col-8">
+                            <strong class="text-danger">Delete All Tags</strong>
+                            <p class="text-muted small mb-0">Permanently deletes all tags in the project. Tags can be re-extracted from Transkribus if needed.</p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <button
+                                class="btn btn-danger show-danger-modal"
+                                data-message="Are you sure you want to delete ALL tags? This cannot be undone!"
+                                data-redirect-url="{% url 'twf:reset_remove_all_tags' %}">
+                                <i class="fas fa-trash"></i> Delete All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Type-Specific Operations -->
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter"></i> Type-Specific Operations</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Select a tag type and perform operations on only that type.</p>
+
+                    {% for stat in tag_stats %}
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <strong>{{ stat.type }}</strong>
+                                        <span class="badge bg-secondary ms-2">{{ stat.total }} total</span>
+                                        {% if stat.workflow_type == "group" %}
+                                            <span class="badge bg-info ms-1">Grouping</span>
+                                        {% elif stat.workflow_type == "enrich" %}
+                                            <span class="badge bg-success ms-1">Enrichment</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-auto">
+                                        {% if stat.parked > 0 %}
+                                            <span class="badge bg-warning text-dark">{{ stat.parked }} parked</span>
+                                        {% endif %}
+                                        {% if stat.with_dict > 0 %}
+                                            <span class="badge bg-primary">{{ stat.with_dict }} grouped</span>
+                                        {% endif %}
+                                        {% if stat.with_enrichment > 0 %}
+                                            <span class="badge bg-success">{{ stat.with_enrichment }} enriched</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2 mb-2">
+                                    <!-- Auto-Group Type (only for grouping workflow types) -->
+                                    {% if stat.workflow_type == "group" %}
+                                        {% if stat.unassigned > 0 %}
+                                            <div class="col-md-6">
+                                                <button
+                                                    class="btn btn-sm btn-success w-100 show-confirm-modal"
+                                                    data-message="Auto-group {{ stat.unassigned }} unassigned '{{ stat.type }}' tags?"
+                                                    data-redirect-url="{% url 'twf:tags_manage_auto_group_type' %}?type={{ stat.type }}">
+                                                    <i class="fas fa-magic"></i> Auto-Group ({{ stat.unassigned }})
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <div class="col-md-6">
+                                                <button class="btn btn-sm btn-outline-success w-100" disabled>
+                                                    <i class="fas fa-magic"></i> No unassigned tags
+                                                </button>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <button class="btn btn-sm btn-outline-success w-100" disabled title="Auto-group only available for grouping workflow types">
+                                                <i class="fas fa-magic"></i> Enrichment Type
+                                            </button>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Unpark Type -->
+                                    {% if stat.parked > 0 %}
+                                        <div class="col-md-6">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary w-100 show-confirm-modal"
+                                                data-message="Unpark {{ stat.parked }} tags of type '{{ stat.type }}'?"
+                                                data-redirect-url="{% url 'twf:tags_manage_unpark_type' %}?type={{ stat.type }}">
+                                                <i class="fas fa-unlock"></i> Unpark ({{ stat.parked }})
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <button class="btn btn-sm btn-outline-secondary w-100" disabled>
+                                                <i class="fas fa-unlock"></i> No parked tags
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row g-2">
+                                    <!-- Remove Dictionary Assignments -->
+                                    {% if stat.with_dict > 0 %}
+                                        <div class="col-md-6">
+                                            <button
+                                                class="btn btn-sm btn-outline-warning w-100 show-confirm-modal"
+                                                data-message="Remove dictionary assignments from {{ stat.with_dict }} tags of type '{{ stat.type }}'?"
+                                                data-redirect-url="{% url 'twf:tags_manage_remove_dict' %}?type={{ stat.type }}">
+                                                <i class="fas fa-unlink"></i> Remove Grouping ({{ stat.with_dict }})
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <button class="btn btn-sm btn-outline-warning w-100" disabled>
+                                                <i class="fas fa-unlink"></i> No grouped tags
+                                            </button>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Remove Enrichment -->
+                                    {% if stat.with_enrichment > 0 %}
+                                        <div class="col-md-6">
+                                            <button
+                                                class="btn btn-sm btn-outline-danger w-100 show-confirm-modal"
+                                                data-message="Remove enrichment data from {{ stat.with_enrichment }} tags of type '{{ stat.type }}'?"
+                                                data-redirect-url="{% url 'twf:tags_manage_remove_enrichment' %}?type={{ stat.type }}">
+                                                <i class="fas fa-eraser"></i> Remove Enrichment ({{ stat.with_enrichment }})
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <button class="btn btn-sm btn-outline-danger w-100" disabled>
+                                                <i class="fas fa-eraser"></i> No enriched tags
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No tags found in this project.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-info mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Available Operations</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="mb-0 small">
+                        <dt>Unpark Tags</dt>
+                        <dd>Removes the parked status, making tags available for processing again.</dd>
+
+                        <dt class="text-success">Auto-Group Tags</dt>
+                        <dd>Automatically assigns unassigned tags to dictionary entries by exact text match. Useful after adding new dictionaries or removing old assignments.</dd>
+
+                        <dt>Remove Dictionary Assignments</dt>
+                        <dd>Clears dictionary entry assignments. Tags will need to be re-grouped.</dd>
+
+                        <dt>Remove Enrichment Data</dt>
+                        <dd>Removes enrichment data (dates, verses, IDs). Tags will need to be re-enriched.</dd>
+
+                        <dt class="text-danger mt-3">Delete All Tags</dt>
+                        <dd>Permanently removes all tags from the project. Tags can be re-extracted from Transkribus.</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <!-- Statistics Summary -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Summary</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Tag Types:</strong></td>
+                                <td class="text-end">{{ tag_stats|length }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Tags:</strong></td>
+                                <td class="text-end">{{ total_tags }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Parked Tags:</strong></td>
+                                <td class="text-end">
+                                    <span class="badge bg-warning text-dark">{{ total_parked }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Grouped Tags:</strong></td>
+                                <td class="text-end">
+                                    <span class="badge bg-primary">{{ total_grouped }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Enriched Tags:</strong></td>
+                                <td class="text-end">
+                                    <span class="badge bg-success">{{ total_enriched }}</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

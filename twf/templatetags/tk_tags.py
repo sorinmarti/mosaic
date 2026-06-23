@@ -1,4 +1,5 @@
 """Custom template tags for the twf app."""
+
 from django import template
 
 register = template.Library()
@@ -12,10 +13,10 @@ def tk_iiif_url(export_url, *args, **kwargs):
     # Output example https://files.transkribus.eu/iiif/2/HDSZLYJCXEMHYCCMZAHRPHXC/full/full/0/default.jpg
 
     # Extract the document ID from the export URL
-    document_id = export_url.split('id=')[-1].split('&')[0]
+    document_id = export_url.split("id=")[-1].split("&")[0]
 
-    image_size = kwargs.get('image_size', 'full')
-    coords = kwargs.get('coords', 'full')
+    image_size = kwargs.get("image_size", "full")
+    coords = kwargs.get("coords", "full")
 
     # Create the IIIF URL
     iiif_url = f"https://files.transkribus.eu/iiif/2/{document_id}/{coords}/{image_size}/0/default.jpg"
@@ -28,13 +29,13 @@ def tk_bounding_box(coords):
     # Input example: x1,y1 x2,y2 x3,y3 x4,y4 ...
     # Output example: [min_x, min_y, width, length]
 
-    xy_pairs = coords.split(' ')
+    xy_pairs = coords.split(" ")
 
     x_coords = []
     y_coords = []
     for xy in xy_pairs:
-        x_str = xy.split(',')[0]
-        y_str = xy.split(',')[1]
+        x_str = xy.split(",")[0]
+        y_str = xy.split(",")[1]
 
         if "." in x_str:
             x_coords.append(int(float(x_str)))

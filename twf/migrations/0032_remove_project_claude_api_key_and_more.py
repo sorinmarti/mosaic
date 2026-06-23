@@ -6,32 +6,32 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0031_project_conf_credentials'),
+        ("twf", "0031_project_conf_credentials"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='project',
-            name='claude_api_key',
+            model_name="project",
+            name="claude_api_key",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='gemini_api_key',
+            model_name="project",
+            name="gemini_api_key",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='geonames_username',
+            model_name="project",
+            name="geonames_username",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='openai_api_key',
+            model_name="project",
+            name="openai_api_key",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='transkribus_password',
+            model_name="project",
+            name="transkribus_password",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='transkribus_username',
+            model_name="project",
+            name="transkribus_username",
         ),
     ]

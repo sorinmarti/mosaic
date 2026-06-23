@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0053_project_project_doi'),
+        ("twf", "0053_project_project_doi"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='dictionaryentry',
-            old_name='authorization_data',
-            new_name='metadata',
+            model_name="dictionaryentry",
+            old_name="authorization_data",
+            new_name="metadata",
         ),
         migrations.RenameField(
-            model_name='task',
-            old_name='task_id',
-            new_name='celery_task_id',
+            model_name="task",
+            old_name="task_id",
+            new_name="celery_task_id",
         ),
         migrations.AddField(
-            model_name='collectionitem',
-            name='metadata',
+            model_name="collectionitem",
+            name="metadata",
             field=models.JSONField(blank=True, default=dict),
         ),
         migrations.AddField(
-            model_name='task',
-            name='progress',
+            model_name="task",
+            name="progress",
             field=models.IntegerField(default=0),
         ),
     ]

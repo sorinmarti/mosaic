@@ -1,11 +1,18 @@
 """ This module contains utility functions for importing data into the database."""
+
 import pandas as pd
 
 from .models import Dictionary, DictionaryEntry, Variation
 
 
-def import_dictionary_from_csv(csv_file_path, user, type_name, label,
-                               label_column='preferred_name', variations_column='variations'):
+def import_dictionary_from_csv(
+    csv_file_path,
+    user,
+    type_name,
+    label,
+    label_column="preferred_name",
+    variations_column="variations",
+):
     """
     Import a dictionary from a CSV file.
     :param csv_file_path:       The path to the CSV file.
@@ -17,7 +24,7 @@ def import_dictionary_from_csv(csv_file_path, user, type_name, label,
     :return:
     """
 
-    df = pd.read_csv(csv_file_path, encoding='utf-8')
+    df = pd.read_csv(csv_file_path, encoding="utf-8")
 
     dictionary = Dictionary(label=label, type=type_name)
     dictionary.save(current_user=user)
@@ -26,10 +33,12 @@ def import_dictionary_from_csv(csv_file_path, user, type_name, label,
     for index, row in df.iterrows():
         entry = DictionaryEntry(dictionary=dictionary, label=row[label_column])
         entry.save(current_user=user)
-        variations = row[variations_column].split(',')
+        variations = row[variations_column].split(",")
         for variation in variations:
-            if variation != '':
-                if not Variation.objects.filter(entry__dictionary__type=type_name, variation=variation).exists():
+            if variation != "":
+                if not Variation.objects.filter(
+                    entry__dictionary__type=type_name, variation=variation
+                ).exists():
                     var = Variation(entry=entry, variation=variation)
                     var.save(current_user=user)
                 else:

@@ -8,29 +8,81 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0059_project_conf_ai_settings'),
+        ("twf", "0059_project_conf_ai_settings"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ExportConfiguration',
+            name="ExportConfiguration",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('modified_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(max_length=255)),
-                ('description', models.TextField(blank=True)),
-                ('export_type', models.CharField(choices=[('document', 'Document Export'), ('page', 'Page Export'), ('collection', 'Collection Export'), ('dictionary', 'Dictionary Export'), ('tag_report', 'Tag Occurrence Report')], max_length=20)),
-                ('output_format', models.CharField(choices=[('json', 'JSON'), ('csv', 'CSV')], default='json', max_length=10)),
-                ('config', models.JSONField(default=dict)),
-                ('is_default', models.BooleanField(default=False)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_%(class)s_set', to=settings.AUTH_USER_MODEL)),
-                ('modified_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='modified_%(class)s_set', to=settings.AUTH_USER_MODEL)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='export_configurations', to='twf.project')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("modified_at", models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(max_length=255)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "export_type",
+                    models.CharField(
+                        choices=[
+                            ("document", "Document Export"),
+                            ("page", "Page Export"),
+                            ("collection", "Collection Export"),
+                            ("dictionary", "Dictionary Export"),
+                            ("tag_report", "Tag Occurrence Report"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "output_format",
+                    models.CharField(
+                        choices=[("json", "JSON"), ("csv", "CSV")],
+                        default="json",
+                        max_length=10,
+                    ),
+                ),
+                ("config", models.JSONField(default=dict)),
+                ("is_default", models.BooleanField(default=False)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_%(class)s_set",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="modified_%(class)s_set",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="export_configurations",
+                        to="twf.project",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

@@ -7,13 +7,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0026_remove_task_result_task_description_task_text'),
+        ("twf", "0026_remove_task_result_task_description_task_text"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='task',
-            name='project',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tasks', to='twf.project'),
+            model_name="task",
+            name="project",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="tasks",
+                to="twf.project",
+            ),
         ),
     ]

@@ -9,9 +9,7 @@
 {% endblock %}
 
 {% block content %}
-    <p class="lead">Search for documents in your project by keyword, type, status and more.
-    AND operators are applied between fields which means the result must fit all filled fields.
-    OR operators are applied within multi-select fields which means the result can fit any of the values in the field.</p>
+    <p class="lead">Search for documents by keyword, metadata, status, and tags.</p>
 
     <!-- Search Form in Card -->
     <div class="card mb-4">
@@ -36,18 +34,7 @@
       </div>
     </div>
 
-    {% if not search_submitted %}
-         <div class="alert alert-info">
-            <h5 class="mb-1">Start your search</h5>
-            <ul class="mb-0">
-                <li>You can search for words in the document text. Use regex to search for specific patterns.</li>
-                <li>Use filters for metadata, status, or tags.</li>
-                <li>Use the plus icon to add more metadata conditions.</li>
-                <li>All filters are combined with <strong>AND</strong>, so the more you fill out, the narrower the results.</li>
-            </ul>
-        </div>
-
-    {% else %} <!-- Search is submitted -->
+    {% if search_submitted %} <!-- Search is submitted -->
         <div class="card">
             <div class="card-header bg-secondary text-white">
                 <i class="fas fa-list"></i> Search Results

@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0049_alter_page_xml_file'),
+        ("twf", "0049_alter_page_xml_file"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='project',
-            name='title',
-            field=models.CharField(help_text='The title of the project. This can be any string, needs to be less than 100 characters. Can be used in data exports.', max_length=100, unique=True, verbose_name='Project Title'),
+            model_name="project",
+            name="title",
+            field=models.CharField(
+                help_text="The title of the project. This can be any string, needs to be less than 100 characters. Can be used in data exports.",
+                max_length=100,
+                unique=True,
+                verbose_name="Project Title",
+            ),
         ),
     ]

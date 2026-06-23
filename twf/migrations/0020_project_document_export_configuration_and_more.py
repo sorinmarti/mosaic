@@ -6,18 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0019_alter_project_members'),
+        ("twf", "0019_alter_project_members"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='document_export_configuration',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of export configurations for documents.', verbose_name='Document Export Configuration'),
+            model_name="project",
+            name="document_export_configuration",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of export configurations for documents.",
+                verbose_name="Document Export Configuration",
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='page_export_configuration',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of export configurations for pages.', verbose_name='Page Export Configuration'),
+            model_name="project",
+            name="page_export_configuration",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of export configurations for pages.",
+                verbose_name="Page Export Configuration",
+            ),
         ),
     ]

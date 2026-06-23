@@ -6,36 +6,36 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0033_project_conf_export_project_conf_tasks_and_more'),
+        ("twf", "0033_project_conf_export_project_conf_tasks_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='project',
-            name='document_export_configuration',
+            model_name="project",
+            name="document_export_configuration",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='metadata_google_doc_id_column',
+            model_name="project",
+            name="metadata_google_doc_id_column",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='metadata_google_sheet_id',
+            model_name="project",
+            name="metadata_google_sheet_id",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='metadata_google_sheet_range',
+            model_name="project",
+            name="metadata_google_sheet_range",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='metadata_google_title_column',
+            model_name="project",
+            name="metadata_google_title_column",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='metadata_google_valid_columns',
+            model_name="project",
+            name="metadata_google_valid_columns",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='page_export_configuration',
+            model_name="project",
+            name="page_export_configuration",
         ),
     ]

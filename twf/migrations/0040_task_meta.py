@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0039_alter_collection_options_alter_collection_title_and_more'),
+        ("twf", "0039_alter_collection_options_alter_collection_title_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='meta',
+            model_name="task",
+            name="meta",
             field=models.JSONField(blank=True, default=dict),
         ),
     ]

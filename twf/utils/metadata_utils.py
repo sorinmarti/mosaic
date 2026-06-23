@@ -4,8 +4,8 @@ import re
 def parse_key_path(key_path):
     """Turns 'choices[0].message.content' into ['choices', 0, 'message', 'content']"""
     parts = []
-    for part in key_path.split('.'):
-        matches = re.finditer(r'([^\[\]]+)|\[(\d+)\]', part)
+    for part in key_path.split("."):
+        matches = re.finditer(r"([^\[\]]+)|\[(\d+)\]", part)
         for match in matches:
             key, index = match.groups()
             if key:
@@ -16,6 +16,17 @@ def parse_key_path(key_path):
 
 
 def set_nested_value(data, key_path, value):
+    """
+    Set a value in a nested dictionary or list structure using a dot-notation key path.
+
+    Args:
+        data: The root dictionary or list to modify
+        key_path: Dot-notation path like 'choices[0].message.content'
+        value: The value to set at the specified path
+
+    Returns:
+        None (modifies data in place)
+    """
     keys = parse_key_path(key_path)
     ref = data
     for i, key in enumerate(keys[:-1]):
@@ -36,7 +47,18 @@ def set_nested_value(data, key_path, value):
     else:
         ref[last_key] = value
 
+
 def delete_nested_key(data, key_path):
+    """
+    Delete a key from a nested dictionary or list structure using a dot-notation key path.
+
+    Args:
+        data: The root dictionary or list to modify
+        key_path: Dot-notation path like 'choices[0].message.content'
+
+    Returns:
+        None (modifies data in place, silently ignores if path doesn't exist)
+    """
     keys = parse_key_path(key_path)
     ref = data
     for key in keys[:-1]:

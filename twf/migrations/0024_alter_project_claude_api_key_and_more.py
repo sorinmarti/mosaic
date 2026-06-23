@@ -6,23 +6,41 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0023_project_claude_api_key_project_gemini_api_key'),
+        ("twf", "0023_project_claude_api_key_project_gemini_api_key"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='project',
-            name='claude_api_key',
-            field=models.CharField(blank=True, help_text='The API key for the Claude API.', max_length=255, null=True, verbose_name='Claude API Key'),
+            model_name="project",
+            name="claude_api_key",
+            field=models.CharField(
+                blank=True,
+                help_text="The API key for the Claude API.",
+                max_length=255,
+                null=True,
+                verbose_name="Claude API Key",
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='gemini_api_key',
-            field=models.CharField(blank=True, help_text='The API key for the Gemini API.', max_length=255, null=True, verbose_name='Gemini API Key'),
+            model_name="project",
+            name="gemini_api_key",
+            field=models.CharField(
+                blank=True,
+                help_text="The API key for the Gemini API.",
+                max_length=255,
+                null=True,
+                verbose_name="Gemini API Key",
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='openai_api_key',
-            field=models.CharField(blank=True, help_text='The API key for the Open AI API.', max_length=255, null=True, verbose_name='Open AI API Key'),
+            model_name="project",
+            name="openai_api_key",
+            field=models.CharField(
+                blank=True,
+                help_text="The API key for the Open AI API.",
+                max_length=255,
+                null=True,
+                verbose_name="Open AI API Key",
+            ),
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0046_remove_userprofile_clearance_level'),
+        ("twf", "0046_remove_userprofile_clearance_level"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='permissions',
+            model_name="userprofile",
+            name="permissions",
             field=models.JSONField(default=dict),
         ),
     ]

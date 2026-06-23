@@ -2,6 +2,20 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Create a new project in the form below.</p>
-    {% crispy form %}
+<p class="lead">Create a new project to organize documents, tags, and workflows.</p>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Create New Project</h5>
+                </div>
+                <div class="card-body">
+                    {% crispy form %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

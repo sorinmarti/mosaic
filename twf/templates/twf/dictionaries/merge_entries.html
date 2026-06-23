@@ -1,50 +1,17 @@
 {% extends 'twf/base/base.html' %}
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Select the dictionary entries to merge. The left entry will remain, and the right entry will be merged into it.</p>
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <!-- Left Column: Remaining Entry -->
-            <div class="col-md-6">
-                <label for="remainingEntry" class="form-label">Remaining Entry</label>
-                <select name="remaining_entry" id="remainingEntry" class="form-control select2" required>
-                    <option value="">Select Remaining Entry</option>
-                    {% for entry in entries %}
-                        <option value="{{ entry.id }}">{{ entry.label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Right Column: Merge Entry -->
-            <div class="col-md-6">
-                <label for="mergeEntry" class="form-label">Entry to Merge</label>
-                <select name="merge_entry" id="mergeEntry" class="form-control select2" required>
-                    <option value="">Select Entry to Merge</option>
-                    {% for entry in entries %}
-                        <option value="{{ entry.id }}">{{ entry.label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Merge Dictionary Entries</h5>
         </div>
-
-        <div class="mt-4">
-            <button type="submit" class="btn btn-dark">Merge Entries</button>
+        <div class="card-body">
+            <p class="text-muted mb-3">Select the dictionary entries to merge. The left entry will remain, and the right entry will be merged into it.</p>
+            {% crispy form %}
         </div>
-    </form>
+    </div>
 {% endblock %}
 
-{% block js %}
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2({
-                width: '100%',
-                placeholder: "Select an entry",
-                allowClear: true
-            });
-        });
-    </script>
-{% endblock %}
 

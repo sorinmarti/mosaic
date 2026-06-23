@@ -2,8 +2,15 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Configure display settings for tables, documents, collections, and the dashboard.</p>
-    {% crispy form %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Display Settings</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Configure display settings for tables, documents, collections, and the dashboard.</p>
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}

@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0058_alter_note_project'),
+        ("twf", "0058_alter_note_project"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='conf_ai_settings',
-            field=models.JSONField(blank=True, default=dict, help_text='Configurations for AI providers including temperature, token limits, etc.', verbose_name='AI Settings'),
+            model_name="project",
+            name="conf_ai_settings",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="Configurations for AI providers including temperature, token limits, etc.",
+                verbose_name="AI Settings",
+            ),
         ),
     ]

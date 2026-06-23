@@ -2,9 +2,15 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-        <p class="lead">Create a new collection</p>
-     
-        {% crispy form %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Create New Collection</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Create a new collection to organize your project's content.</p>
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}

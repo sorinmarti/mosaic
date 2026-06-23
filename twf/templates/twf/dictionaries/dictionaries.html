@@ -3,23 +3,7 @@
 {% load twf_filters %}
 
 {% block page_title %}
-    <div class="d-flex justify-content-between align-items-center pb-1 mb-3">
-      <h1 class="mb-0" style="width: 100%;">Dictionaries</h1>
-      <div>
-        {% if perms.twf.dictionary_add %}
-        <a href="{% url 'twf:dictionaries_add' %}" class="btn btn-sm btn-dark me-1"
-           data-bs-toggle="tooltip" data-bs-placement="top" title="Add existing dictionaries">
-          <i class="fa fa-plus-circle"></i> Add Dictionary
-        </a>
-        {% endif %}
-        {% if perms.twf.dictionary_create %}
-        <a href="{% url 'twf:dictionary_create' %}" class="btn btn-sm btn-dark"
-           data-bs-toggle="tooltip" data-bs-placement="top" title="Create a new dictionary">
-          <i class="fa fa-plus"></i> Create New
-        </a>
-        {% endif %}
-      </div>
-    </div>
+    <h1>Dictionaries</h1>
 {% endblock %}
 
 {% block content %}

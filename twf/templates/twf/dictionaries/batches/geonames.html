@@ -3,8 +3,26 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-     <p class="lead">Geonames is a geo-database and used for locations.</p>
-     {% include 'twf/dictionaries/batches/notice.html' %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">GeoNames Batch Enrichment</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Geonames is a geo-database and used for locations.</p>
 
-     {% crispy form %}
+            <div class="alert alert-light border d-flex align-items-start mb-3" role="alert">
+                <i class="fas fa-info-circle me-2 mt-1"></i>
+                <div class="small">
+                    You are about to use a batch operation which will try to find authorization data for all entries in the selected
+                    dictionary. This operation can take a long time depending on the number of entries in the dictionary. Please note
+                    that you might need to set credentials (API keys, usernames, etc.) in the project settings before you can use
+                    this feature.<br/>
+                    <strong>How it works</strong>: Batches take the labels of dictionary entries as input and try to find authorization
+                    data. Format your entries accordingly.
+                </div>
+            </div>
+
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}

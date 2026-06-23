@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0064_project_zenodo_deposition_id'),
+        ("twf", "0064_project_zenodo_deposition_id"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='conf_display',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of display configurations.', verbose_name='Display Configurations'),
+            model_name="project",
+            name="conf_display",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of display configurations.",
+                verbose_name="Display Configurations",
+            ),
         ),
     ]

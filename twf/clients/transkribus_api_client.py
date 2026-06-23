@@ -39,16 +39,15 @@ class TranskribusAPIClient:
         Returns:
             True if authentication successful, False otherwise
         """
-        payload = {
-            'user': self.username,
-            'pw': self.password
-        }
+        payload = {"user": self.username, "pw": self.password}
 
         try:
             response = requests.post(self.AUTH_URL, data=payload, timeout=30)
 
             if response.status_code != 200:
-                logger.error(f"Authentication failed with status {response.status_code}")
+                logger.error(
+                    f"Authentication failed with status {response.status_code}"
+                )
                 logger.error(f"Response: {response.text[:500]}")
                 return False
 
@@ -65,7 +64,7 @@ class TranskribusAPIClient:
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to authenticate with Transkribus API: {e}")
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 logger.error(f"Response: {e.response.text}")
             return False
         except Exception as e:
@@ -86,7 +85,9 @@ class TranskribusAPIClient:
             raise ValueError("Not authenticated. Call authenticate() first.")
         return {"JSESSIONID": self.session_id}
 
-    def get_full_document(self, collection_id: int, document_id: int) -> Optional[Dict[str, Any]]:
+    def get_full_document(
+        self, collection_id: int, document_id: int
+    ) -> Optional[Dict[str, Any]]:
         """
         Get complete document information including all metadata.
 
@@ -102,11 +103,13 @@ class TranskribusAPIClient:
         try:
             response = requests.get(url, cookies=self._get_cookies(), timeout=30)
             response.raise_for_status()
-            logger.debug(f"Successfully fetched full document {document_id} from collection {collection_id}")
+            logger.debug(
+                f"Successfully fetched full document {document_id} from collection {collection_id}"
+            )
             return response.json()
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to get full document {document_id}: {e}")
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 logger.error(f"Response: {e.response.text}")
             return None
 
@@ -123,37 +126,38 @@ class TranskribusAPIClient:
             - page_labels_available: List of available page label types
             - pages: Dictionary mapping page numbers to their labels
         """
-        result = {
-            'labels': [],
-            'page_labels_available': [],
-            'pages': {}
-        }
+        result = {"labels": [], "page_labels_available": [], "pages": {}}
 
         # Extract document-level labels
-        if 'md' in doc_data and 'labels' in doc_data['md']:
-            result['labels'] = doc_data['md']['labels']
+        if "md" in doc_data and "labels" in doc_data["md"]:
+            result["labels"] = doc_data["md"]["labels"]
 
         # Extract available page label types
-        if 'md' in doc_data and 'pageLabels' in doc_data['md']:
-            result['page_labels_available'] = doc_data['md']['pageLabels']
+        if "md" in doc_data and "pageLabels" in doc_data["md"]:
+            result["page_labels_available"] = doc_data["md"]["pageLabels"]
 
         # Extract page-specific labels
-        if 'pageList' in doc_data and 'pages' in doc_data['pageList']:
-            for page in doc_data['pageList']['pages']:
-                page_nr = page.get('pageNr')
-                page_id = page.get('pageId')
-                page_labels = page.get('labels', [])
+        if "pageList" in doc_data and "pages" in doc_data["pageList"]:
+            for page in doc_data["pageList"]["pages"]:
+                page_nr = page.get("pageNr")
+                page_id = page.get("pageId")
+                page_labels = page.get("labels", [])
 
                 if page_id:
-                    result['pages'][str(page_id)] = {
-                        'page_nr': page_nr,
-                        'labels': page_labels,
-                        'is_excluded': any(label.get('name', '').lower() == 'exclude' for label in page_labels)
+                    result["pages"][str(page_id)] = {
+                        "page_nr": page_nr,
+                        "labels": page_labels,
+                        "is_excluded": any(
+                            label.get("name", "").lower() == "exclude"
+                            for label in page_labels
+                        ),
                     }
 
         return result
 
-    def enrich_document_metadata(self, collection_id: int, document_id: int) -> Optional[Dict[str, Any]]:
+    def enrich_document_metadata(
+        self, collection_id: int, document_id: int
+    ) -> Optional[Dict[str, Any]]:
         """
         Fetch full document data and extract relevant metadata.
 

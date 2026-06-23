@@ -4,42 +4,61 @@
 {% load render_table from django_tables2 %}
 
 {% block content %}
-    <p class="lead">
-        Manage users and their permissions: create new users, reset passwords, deactivate accounts, and delete users. 
-        These actions may affect project permissions and other associated data.
-    </p>
+<p class="lead">
+    Manage users and their permissions: create new users, reset passwords, deactivate accounts, and delete users.
+</p>
 
-    <h2>Create New User</h2>
-    {% crispy form %}
-
-    <br/>
-    <hr/>
-    <br/>
-
-    <h2>Existing Users</h2>
-    {% twf_filter filter %}
-
-    <!-- Hidden form for user actions -->
-    <form id="user_action_form" method="post" action="">
-        {% csrf_token %}
-
-    </form>
-
-    <div class="table-responsive-sm mt-3">
-        <div class="card">
-            <div class="card-body p-0">
-                {% render_table table %}
+<div class="container-fluid mt-4">
+    <!-- Create New User Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Create New User</h5>
+                </div>
+                <div class="card-body">
+                    {% crispy form %}
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="mt-3 alert alert-info">
-        <h5><i class="fas fa-info-circle"></i> User Management Information</h5>
-        <ul class="mb-0">
-            <li><strong>Admin/Staff users</strong> have special permissions within the system.</li>
-            <li><strong>Users who own projects</strong> cannot be deleted. Please transfer project ownership first.</li>
-            <li><strong>Deactivated users</strong> cannot log in, but their data is preserved.</li>
-            <li><strong>Password reset</strong> will generate a new random password and email it to the user.</li>
-        </ul>
+    <!-- Existing Users Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">Existing Users</h5>
+                </div>
+                <div class="card-body">
+                    {% twf_filter filter %}
+
+                    <!-- Hidden form for user actions -->
+                    <form id="user_action_form" method="post" action="">
+                        {% csrf_token %}
+                    </form>
+
+                    <div class="table-responsive-sm mt-3">
+                        {% render_table table %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Information Alert -->
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> User Management Information</h5>
+                <ul class="mb-0">
+                    <li><strong>Admin/Staff users</strong> have special permissions within the system.</li>
+                    <li><strong>Users who own projects</strong> cannot be deleted. Please transfer project ownership first.</li>
+                    <li><strong>Deactivated users</strong> cannot log in, but their data is preserved.</li>
+                    <li><strong>Password reset</strong> will generate a new random password and email it to the user.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

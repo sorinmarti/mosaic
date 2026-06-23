@@ -6,18 +6,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0028_task_title'),
+        ("twf", "0028_task_title"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='date_normalization_configuration',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of date normalization configurations.', verbose_name='Date Normalization Configuration'),
+            model_name="project",
+            name="date_normalization_configuration",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of date normalization configurations.",
+                verbose_name="Date Normalization Configuration",
+            ),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('STARTED', 'Started'), ('SUCCESS', 'Success'), ('FAILURE', 'Failure'), ('PROGRESS', 'Progress'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=10),
+            model_name="task",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("STARTED", "Started"),
+                    ("SUCCESS", "Success"),
+                    ("FAILURE", "Failure"),
+                    ("PROGRESS", "Progress"),
+                    ("CANCELLED", "Cancelled"),
+                ],
+                default="PENDING",
+                max_length=10,
+            ),
         ),
     ]

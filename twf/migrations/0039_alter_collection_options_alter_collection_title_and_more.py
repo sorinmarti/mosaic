@@ -6,22 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0038_userprofile_affiliation_userprofile_orc_id'),
+        ("twf", "0038_userprofile_affiliation_userprofile_orc_id"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='collection',
-            options={'ordering': ['title']},
+            name="collection",
+            options={"ordering": ["title"]},
         ),
         migrations.AlterField(
-            model_name='collection',
-            name='title',
+            model_name="collection",
+            name="title",
             field=models.CharField(max_length=255),
         ),
         migrations.AlterField(
-            model_name='collectionitem',
-            name='title',
+            model_name="collectionitem",
+            name="title",
             field=models.CharField(max_length=255),
         ),
     ]

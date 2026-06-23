@@ -6,13 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0018_collectionitem_review_notes'),
+        ("twf", "0018_collectionitem_review_notes"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='project',
-            name='members',
-            field=models.ManyToManyField(blank=True, help_text='The members of the project. Their roles can be adjustedin the user management section.', related_name='projects', to='twf.userprofile', verbose_name='Project Members'),
+            model_name="project",
+            name="members",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="The members of the project. Their roles can be adjustedin the user management section.",
+                related_name="projects",
+                to="twf.userprofile",
+                verbose_name="Project Members",
+            ),
         ),
     ]

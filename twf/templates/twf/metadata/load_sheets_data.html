@@ -3,16 +3,22 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Load metadata from a google sheet. Set the credentials etc. in the <a href="{% url 'twf:project_settings_tasks' %}?tab=google_sheets">project settings</a>.</p>
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Load Google Sheets Metadata</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Load metadata from a Google Sheet. Set the credentials in the <a href="{% url 'twf:project_settings_tasks' %}?tab=google_sheets">project settings</a>.</p>
 
-     <!-- Info box -->
-    <div class="alert alert-info">
-        <small>
-            You are retrieving data from <a href="https://docs.google.com/spreadsheets/d/{{ project.conf_tasks.google_sheet.sheet_id }}/edit" target="_blank">https://docs.google.com/spreadsheets/d/{{ project.conf_tasks.google_sheet.sheet_id }}/edit</a>.
-            The specified range is <code>{{ project.conf_tasks.google_sheet.range }}</code>. This column tying the metadata to the document is <code>{{ project.conf_tasks.google_sheet.document_id_column }}</code>,
-            the title column is <code>{{ project.conf_tasks.google_sheet.document_title_column }}</code>, and <code>{{ project.conf_tasks.google_sheet.valid_columns }}</code> are the valid columns.
-        </small>
+            <div class="alert alert-info">
+                <small>
+                    You are retrieving data from <a href="https://docs.google.com/spreadsheets/d/{{ project.conf_tasks.google_sheet.sheet_id }}/edit" target="_blank">https://docs.google.com/spreadsheets/d/{{ project.conf_tasks.google_sheet.sheet_id }}/edit</a>.
+                    The specified range is <code>{{ project.conf_tasks.google_sheet.range }}</code>. The column tying the metadata to the document is <code>{{ project.conf_tasks.google_sheet.document_id_column }}</code>,
+                    the title column is <code>{{ project.conf_tasks.google_sheet.document_title_column }}</code>, and <code>{{ project.conf_tasks.google_sheet.valid_columns }}</code> are the valid columns.
+                </small>
+            </div>
+
+            {% crispy form %}
+        </div>
     </div>
-
-     {% crispy form %}
 {% endblock %}

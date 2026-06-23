@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0043_rename_assigned_items_workflow_assigned_document_items'),
+        ("twf", "0043_rename_assigned_items_workflow_assigned_document_items"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='workflow',
-            name='assigned_collection_items',
-            field=models.ManyToManyField(related_name='workflows', to='twf.collectionitem'),
+            model_name="workflow",
+            name="assigned_collection_items",
+            field=models.ManyToManyField(
+                related_name="workflows", to="twf.collectionitem"
+            ),
         ),
         migrations.AddField(
-            model_name='workflow',
-            name='assigned_dictionary_entries',
-            field=models.ManyToManyField(related_name='workflows', to='twf.dictionaryentry'),
+            model_name="workflow",
+            name="assigned_dictionary_entries",
+            field=models.ManyToManyField(
+                related_name="workflows", to="twf.dictionaryentry"
+            ),
         ),
     ]

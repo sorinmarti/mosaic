@@ -1,4 +1,6 @@
 {% load twf_filters %}
+<!-- Include form media for Select2 and other widgets -->
+{{ filter.form.media }}
 <form class="row g-2 mb-3" method="get">
     <!-- Check if this is a task filter (with our specific fields) -->
     {% if 'title' in filter.form.fields and 'status' in filter.form.fields and 'start_time_after' in filter.form.fields %}

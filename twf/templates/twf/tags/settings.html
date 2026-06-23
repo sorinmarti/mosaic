@@ -1,14 +1,37 @@
 {% extends 'twf/base/base.html' %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">You applied the following settings to your tag workflows.</p>
-    <p>
-        These are normal tag types: {{ tag_types }}
-    </p>
-     <p>
-        These tag types are excluded and will be ignored: {{ excluded_types }}
-    </p>
-     <p>
-        These tag types are treated as dates: {{ date_types }}
-    </p>
+    <p class="lead">Configure how tags are processed and categorized in your project.</p>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title mb-0">Tag Type Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        {% crispy form %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Configuration Guide</h5>
+                    <p><strong>Dictionary Type:</strong> Connect tag types to dictionary types. For example, both "sender_person" and "recipient_person" can map to "person" dictionary.</p>
+                    <p><strong>Workflow:</strong></p>
+                    <ul>
+                        <li><strong>Group:</strong> Tag variations are grouped and assigned to dictionary entries (default for most tags)</li>
+                        <li><strong>Enrich:</strong> Tags receive direct enrichment without grouping (e.g., dates, Bible verses)</li>
+                        <li><strong>Ignore:</strong> Tags are excluded from workflows and processing</li>
+                    </ul>
+                    <p><strong>Enrichment Configuration:</strong> For "Enrich" workflow types, specify the workflow title and form type (e.g., "verse", "date").</p>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

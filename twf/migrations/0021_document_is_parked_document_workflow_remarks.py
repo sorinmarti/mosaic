@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0020_project_document_export_configuration_and_more'),
+        ("twf", "0020_project_document_export_configuration_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='document',
-            name='is_parked',
+            model_name="document",
+            name="is_parked",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='document',
-            name='workflow_remarks',
-            field=models.TextField(blank=True, default=''),
+            model_name="document",
+            name="workflow_remarks",
+            field=models.TextField(blank=True, default=""),
         ),
     ]

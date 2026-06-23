@@ -6,23 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0032_remove_project_claude_api_key_and_more'),
+        ("twf", "0032_remove_project_claude_api_key_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='conf_export',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of export configurations.', verbose_name='Export Configurations'),
+            model_name="project",
+            name="conf_export",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of export configurations.",
+                verbose_name="Export Configurations",
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='conf_tasks',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of task configurations.', verbose_name='Task Configurations'),
+            model_name="project",
+            name="conf_tasks",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of task configurations.",
+                verbose_name="Task Configurations",
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='conf_credentials',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of credential configurations.', verbose_name='Credentials Configurations'),
+            model_name="project",
+            name="conf_credentials",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of credential configurations.",
+                verbose_name="Credentials Configurations",
+            ),
         ),
     ]

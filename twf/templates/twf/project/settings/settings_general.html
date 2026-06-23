@@ -2,8 +2,15 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Change the general settings of the project.</p>
-    {% crispy form %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">General Settings</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Change the general settings of the project.</p>
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}

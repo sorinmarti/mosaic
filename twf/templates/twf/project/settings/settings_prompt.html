@@ -2,33 +2,41 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Configure AI prompt settings like temperature, tokens, and model parameters for each AI provider.</p>
-    {% crispy form %}
-{% endblock %}
-
-{% block script %}
-<script>
-   $(document).ready(function() {
-        // Check if there's an active tab in the URL and show it
-        const urlParams = new URLSearchParams(window.location.search);
-        const activeTab = urlParams.get('tab');
-
-        if (activeTab) {
-            $(`.nav-tabs a[href="#${activeTab}"]`).tab('show');
-            $('#id_active_tab').val(activeTab); // Set hidden input if available
-        }
-
-        // Update the URL and hidden input when a new tab is clicked
-        $('.nav-tabs a').on('shown.bs.tab', function(e) {
-            const tabName = $(e.target).attr('href').substring(1); // Get tab name without #
-
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('tab', tabName);
-
-            // Update URL without reloading and set hidden input value
-            window.history.replaceState(null, null, newUrl);
-            $('#id_active_tab').val(tabName);
-        });
-    });
-</script>
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">AI Prompt Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Configure AI prompt parameters for the generic LLM client. These settings apply to all AI providers.</p>
+                    {% crispy form %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">About These Settings</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        These settings control how the AI generates responses across all providers (OpenAI, Anthropic, Google, Mistral, etc.).
+                    </p>
+                    <h6 class="mt-3">Parameter Guide:</h6>
+                    <ul class="small">
+                        <li><strong>Temperature:</strong> Higher values produce more creative but less predictable outputs</li>
+                        <li><strong>Max Tokens:</strong> Limits response length (1 token ≈ 4 characters)</li>
+                        <li><strong>Max Image Size:</strong> Resizes images before sending to save costs</li>
+                        <li><strong>Top P:</strong> Alternative to temperature for controlling randomness</li>
+                        <li><strong>Penalties:</strong> Reduce repetition in generated text</li>
+                        <li><strong>Seed:</strong> For reproducible results (when supported)</li>
+                    </ul>
+                    <div class="alert alert-info small mt-3">
+                        <strong>Note:</strong> Not all parameters are supported by all providers. The generic client will automatically skip unsupported parameters.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

@@ -2,5 +2,13 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    {% crispy form %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Create New Dictionary</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Create a new dictionary to organize and categorize your tags.</p>
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}

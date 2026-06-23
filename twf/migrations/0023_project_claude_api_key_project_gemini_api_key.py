@@ -6,18 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0022_alter_document_is_parked'),
+        ("twf", "0022_alter_document_is_parked"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='claude_api_key',
-            field=models.CharField(blank=True, help_text='The API key for the Claude API.', max_length=100, null=True, verbose_name='Claude API Key'),
+            model_name="project",
+            name="claude_api_key",
+            field=models.CharField(
+                blank=True,
+                help_text="The API key for the Claude API.",
+                max_length=100,
+                null=True,
+                verbose_name="Claude API Key",
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='gemini_api_key',
-            field=models.CharField(blank=True, help_text='The API key for the Gemini API.', max_length=100, null=True, verbose_name='Gemini API Key'),
+            model_name="project",
+            name="gemini_api_key",
+            field=models.CharField(
+                blank=True,
+                help_text="The API key for the Gemini API.",
+                max_length=100,
+                null=True,
+                verbose_name="Gemini API Key",
+            ),
         ),
     ]

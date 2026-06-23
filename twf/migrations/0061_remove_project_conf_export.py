@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0060_exportconfiguration'),
+        ("twf", "0060_exportconfiguration"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='project',
-            name='conf_export',
+            model_name="project",
+            name="conf_export",
         ),
     ]

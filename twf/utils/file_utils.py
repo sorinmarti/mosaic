@@ -1,4 +1,5 @@
 """This module contains utility functions for working with files and directories."""
+
 import shutil
 from pathlib import Path
 
@@ -7,7 +8,7 @@ def delete_all_in_folder(folder_path):
     """This function deletes all files and folders in the specified directory."""
     # Convert to Path object
     folder = Path(folder_path)
-    
+
     # Check if the folder exists
     if not folder.exists():
         return

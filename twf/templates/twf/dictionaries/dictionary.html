@@ -15,27 +15,46 @@
 {% endblock %}
 
 {% block content %}
-    <p class="lead">
-        Dictionary type: <strong>{{ dictionary.type }}</strong> | 
-        Created by: <strong>{{ dictionary.created_by }}</strong> | 
-        Last modified: <strong>{{ dictionary.modified_at|date:"d M Y H:i" }}</strong>
-    </p>
-    
     <!-- Entries Count Card -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card bg-light">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Total Entries</h5>
+                </div>
                 <div class="card-body text-center">
-                    <h5 class="card-title">Total Entries</h5>
-                    <p class="display-4">{{ table.rows|length }}</p>
+                    <p class="display-4 mb-0">{{ table.rows|length }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-8">
             <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Dictionary Information</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Dictionary Description</h5>
-                    <p>{{ dictionary.description|default:"No description available." }}</p>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 30%">Type:</th>
+                                <td>{{ dictionary.type }}</td>
+                            </tr>
+                            <tr>
+                                <th>Created by:</th>
+                                <td>{{ dictionary.created_by|default:"—" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Last modified:</th>
+                                <td>{{ dictionary.modified_at|date:"d M Y H:i" }} by {{ dictionary.modified_by|default:"—" }}</td>
+                            </tr>
+                            {% if dictionary.description %}
+                            <tr>
+                                <th>Description:</th>
+                                <td>{{ dictionary.description }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

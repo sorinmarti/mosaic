@@ -1,20 +1,24 @@
 """ Utility functions for exporting data from the TWF database. """
+
 import json
 from datetime import datetime
 
 from twf.models import Document, Page, Project
 
-SPECIAL_KEYS = ['tag_list', 'used_dicts', 'data_curators', 'date.today', 'date.now']
+SPECIAL_KEYS = ["tag_list", "used_dicts", "data_curators", "date.today", "date.now"]
 SPECIAL_KEY_CONFIG = {
-    'tag_list': {'style': 'nested',    # 'nested' or 'flat'
-                 'used_for': ['document'],  # 'document', 'page', 'project'
-                 },
-    'data_curators': {'style': 'nested',    # 'nested' or 'flat'
-                      'used_for': ['document'],  # 'document', 'page', 'project'
-                      'properties': ['name', 'orcid']}, # List of values to include: 'name',
-                                                        # 'orcid', 'affiliation', 'username', 'email', 'role'
+    "tag_list": {
+        "style": "nested",  # 'nested' or 'flat'
+        "used_for": ["document"],  # 'document', 'page', 'project'
+    },
+    "data_curators": {
+        "style": "nested",  # 'nested' or 'flat'
+        "used_for": ["document"],  # 'document', 'page', 'project'
+        "properties": ["name", "orcid"],
+    },  # List of values to include: 'name',
+    # 'orcid', 'affiliation', 'username', 'email', 'role'
+}
 
-    }
 
 def get_nested_value(data, key, default=None):
     """
@@ -28,7 +32,7 @@ def get_nested_value(data, key, default=None):
     :param default: The default value to return if the key is not found.
     :return: The retrieved value or the default value if key is not found.
     """
-    keys = key.split('.')
+    keys = key.split(".")
     val = data
     try:
         for k in keys:
@@ -46,45 +50,45 @@ def get_nested_value(data, key, default=None):
 
 
 def get_special_value(special_key, metadata, db_object, mapping):
-    """ Get a special value for a document or page object."""
+    """Get a special value for a document or page object."""
     object_type = None
     if isinstance(db_object, Project):
-        object_type = 'project'
+        object_type = "project"
     elif isinstance(db_object, Document):
-        object_type = 'document'
+        object_type = "document"
     elif isinstance(db_object, Page):
-        object_type = 'page'
+        object_type = "page"
 
     if not object_type:
         return "Special Value Not Found: invalid object type"
 
     print(special_key)
     print(mapping)
-    if special_key == 'tag_list':
+    if special_key == "tag_list":
         return get_tag_list(object_type, db_object, mapping)
-    elif special_key == 'used_dicts':
+    elif special_key == "used_dicts":
         return get_used_dicts(object_type, db_object, mapping)
-    elif special_key == 'data_curators':
+    elif special_key == "data_curators":
         return get_data_curators(object_type, db_object, mapping)
-    elif special_key == 'date.today':
-        return datetime.now().strftime('%Y-%m-%d')
-    elif special_key == 'date.now':
-        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    elif special_key == "date.today":
+        return datetime.now().strftime("%Y-%m-%d")
+    elif special_key == "date.now":
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     else:
         return "Special Value Not Found"
 
 
 def get_data_curators(object_type, db_object, mapping):
-    """ Get data curators for a document or page object."""
-    config = SPECIAL_KEY_CONFIG.get('data_curators', {})
+    """Get data curators for a document or page object."""
+    config = SPECIAL_KEY_CONFIG.get("data_curators", {})
     data_curators = []
-    if object_type == 'document':
+    if object_type == "document":
         data_curators = [db_object.modified_by, db_object.created_by]
         for page in db_object.pages.all():
             data_curators.extend([page.modified_by, page.created_by])
-    elif object_type == 'page':
+    elif object_type == "page":
         data_curators = [db_object.modified_by, db_object.created_by]
-    elif object_type == 'project':
+    elif object_type == "project":
         data_curators = [db_object.owner]
         for document in db_object.documents.all():
             data_curators.extend([document.modified_by, document.created_by])
@@ -95,16 +99,16 @@ def get_data_curators(object_type, db_object, mapping):
     data_curator_data = []
     for data_curator in data_curators:
         data = {}
-        for key in config['properties']:
+        for key in config["properties"]:
             value = get_nested_value(data_curator, key, "")
-            if key == 'name':
+            if key == "name":
                 value = f"{data_curator.first_name} {data_curator.last_name}"
-            elif key == 'orcid':
+            elif key == "orcid":
                 value = data_curator.profile.orc_id
-            elif key == 'affiliation':
+            elif key == "affiliation":
                 value = data_curator.profile.affiliation
-            elif key == 'username':
-                key = 'name'
+            elif key == "username":
+                key = "name"
             data[key] = value
         data_curator_data.append(data)
 
@@ -112,19 +116,19 @@ def get_data_curators(object_type, db_object, mapping):
 
 
 def get_used_dicts(object_type, db_object, mapping):
-    """ Get a list of dictionaries used for a document or page object."""
-    config = SPECIAL_KEY_CONFIG.get('used_dicts', {})
+    """Get a list of dictionaries used for a document or page object."""
+    config = SPECIAL_KEY_CONFIG.get("used_dicts", {})
     return {}
 
 
 def get_tag_list(object_type, db_object, mapping):
-    """ Get a list of tags for a document or page object."""
-    config = SPECIAL_KEY_CONFIG.get('tag_list', {})
+    """Get a list of tags for a document or page object."""
+    config = SPECIAL_KEY_CONFIG.get("tag_list", {})
     return {}
 
 
 def create_data_from_config(metadata, config, db_object=None, return_warnings=False):
-    """ Create a transformed dictionary from metadata using a configuration dictionary.
+    """Create a transformed dictionary from metadata using a configuration dictionary.
     :param metadata: dictionary containing metadata
     :param config: dictionary containing the transformation configuration
     :param db_object: object containing additional data
@@ -137,28 +141,32 @@ def create_data_from_config(metadata, config, db_object=None, return_warnings=Fa
 
     for key, mapping in config.items():
         try:
-            value_expression = mapping.get('value', "")
-            empty_value = mapping.get('empty_value', "")
+            value_expression = mapping.get("value", "")
+            empty_value = mapping.get("empty_value", "")
 
             # Handle nested keys and DB field references
-            if value_expression.startswith('{__') and value_expression.endswith('__}'):
+            if value_expression.startswith("{__") and value_expression.endswith("__}"):
                 # Handle DB field access like "{__tk_page_number__}"
                 db_field = value_expression[3:-3]
                 if db_object:
                     value = get_nested_value(db_object, db_field, empty_value)
                     if value == empty_value:
-                        warnings.append(f"Key '{key}' ({db_field}) missing in DB object")
+                        warnings.append(
+                            f"Key '{key}' ({db_field}) missing in DB object"
+                        )
                 else:
                     warnings.append(f"Key '{key}' requires a DB object")
                     value = empty_value
-            elif value_expression.startswith('{') and value_expression.endswith('}'):
+            elif value_expression.startswith("{") and value_expression.endswith("}"):
                 # Handle metadata dynamic reference like "{tags1}"
                 metadata_key = value_expression[1:-1]
                 if metadata_key in SPECIAL_KEYS:
-                    value = get_special_value(metadata_key, metadata, db_object, mapping)
+                    value = get_special_value(
+                        metadata_key, metadata, db_object, mapping
+                    )
                 else:
                     value = get_nested_value(metadata, metadata_key, empty_value)
-            elif '{' in value_expression and '}' in value_expression:
+            elif "{" in value_expression and "}" in value_expression:
                 # Handle formatted strings like "p. {page}"
                 try:
                     value = value_expression.format(**metadata)
@@ -170,7 +178,7 @@ def create_data_from_config(metadata, config, db_object=None, return_warnings=Fa
                 value = value_expression
 
             # Assign value to the transformed dictionary (handle nested keys)
-            keys = key.split('.')
+            keys = key.split(".")
             current_level = transformed
             for i, sub_key in enumerate(keys):
                 if i == len(keys) - 1:
@@ -186,7 +194,7 @@ def create_data_from_config(metadata, config, db_object=None, return_warnings=Fa
 
 
 def create_data(db_object, return_warnings=False):
-    """ Create a dictionary from a database object.
+    """Create a dictionary from a database object.
     :param db_object: object to create data from
     :param return_warnings: boolean indicating whether to return warnings
     :return: dictionary, list of warnings
@@ -202,12 +210,12 @@ def create_data(db_object, return_warnings=False):
 
 
 def create_project_data(project, return_warnings=False):
-    """ Create a dictionary from a project object.
+    """Create a dictionary from a project object.
     :param project: Project object
     :param return_warnings: boolean indicating whether to return warnings
     :return: dictionary, list of warnings
     """
-    project_Export = []
+    project_export = []
     all_warnings = []
     for document in project.documents.all():
         if return_warnings:
@@ -215,27 +223,33 @@ def create_project_data(project, return_warnings=False):
             all_warnings.extend(warnings)
         else:
             document_data = create_document_data(document)
-        project_Export.append(document_data)
+        project_export.append(document_data)
 
     if return_warnings:
-        return project_Export, all_warnings
+        return project_export, all_warnings
 
-    return project_Export
+    return project_export
 
 
 def create_document_data(document, return_warnings=False):
-    """ Create a dictionary from a document object."""
+    """Create a dictionary from a document object."""
     data = {**document.metadata}
 
     all_warnings = []
-    config = document.project.get_export_configuration('document_export_configuration', return_json=True)
+    config = document.project.get_export_configuration(
+        "document_export_configuration", return_json=True
+    )
     # If an empty config is returned, check if it is because the JSON could not be decoded
     if config == {}:
         try:
-            str_config = document.project.get_export_configuration('document_export_configuration', return_json=False)
+            str_config = document.project.get_export_configuration(
+                "document_export_configuration", return_json=False
+            )
             config = json.loads(str_config)
         except json.JSONDecodeError:
-            all_warnings.append("Invalid document export configuration: JSON could not be decoded")
+            all_warnings.append(
+                "Invalid document export configuration: JSON could not be decoded"
+            )
 
     if return_warnings:
         doc_export, warnings = create_data_from_config(data, config, document, True)
@@ -243,14 +257,14 @@ def create_document_data(document, return_warnings=False):
     else:
         doc_export = create_data_from_config(data, config, document)
 
-    doc_export['pages'] = []
+    doc_export["pages"] = []
     for page in document.pages.all():
         if return_warnings:
             page_data, warnings = create_page_data(page, True)
             all_warnings.extend(warnings)
         else:
             page_data = create_page_data(page)
-        doc_export['pages'].append(page_data)
+        doc_export["pages"].append(page_data)
 
     if return_warnings:
         return doc_export, all_warnings
@@ -258,16 +272,20 @@ def create_document_data(document, return_warnings=False):
 
 
 def create_page_data(page, return_warnings=False):
-    """ Create a dictionary from a page object."""
+    """Create a dictionary from a page object."""
     data = {**page.parsed_data, **page.metadata}
     all_warnings = []
-    config = page.document.project.get_export_configuration('page_export_configuration')
+    config = page.document.project.get_export_configuration("page_export_configuration")
     if config == {}:
         try:
-            str_config = page.document.project.get_export_configuration('page_export_configuration', return_json=False)
+            str_config = page.document.project.get_export_configuration(
+                "page_export_configuration", return_json=False
+            )
             config = json.loads(str_config)
         except json.JSONDecodeError:
-            all_warnings.append("Invalid page export configuration: JSON could not be decoded")
+            all_warnings.append(
+                "Invalid page export configuration: JSON could not be decoded"
+            )
 
     if return_warnings:
         page_export, warnings = create_data_from_config(data, config, page, True)
@@ -277,7 +295,7 @@ def create_page_data(page, return_warnings=False):
         return create_data_from_config(data, config, page, False)
 
 
-def flatten_dict_keys(d, parent_key='', sep='.'):
+def flatten_dict_keys(d, parent_key="", sep="."):
     """
     Recursively flatten a dictionary and list to get keys in 'dot notation'.
     Only the first element of a list will be processed.

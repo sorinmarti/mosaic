@@ -1,13 +1,13 @@
 """
-Adapter for generic-llm-api-client to match TWF's expected AI client interface.
+Adapter for generic-llm-api-client to match MOSAIC's expected AI client interface.
 
 This adapter wraps the generic-llm-api-client to provide backward compatibility
-with TWF's existing code that expects a specific API:
+with MOSAIC's existing code that expects a specific API:
 - prompt() returns (response_text, elapsed_time) tuple instead of LLMResponse
 - Provides add_image_resource() and clear_image_resources() methods
 - Provides has_multimodal_support() method
 
-The adapter allows TWF to use the PyPI-published generic-llm-api-client package
+The adapter allows MOSAIC to use the PyPI-published generic-llm-api-client package
 without modifying existing task code.
 """
 
@@ -17,7 +17,7 @@ from ai_client import create_ai_client as _create_ai_client, BaseAIClient
 
 class TWFAIClientAdapter:
     """
-    Adapter that wraps generic-llm-api-client to match TWF's expected interface.
+    Adapter that wraps generic-llm-api-client to match MOSAIC's expected interface.
 
     This class maintains state for images (add/clear pattern) while delegating
     to the underlying stateless generic-llm-api-client.
@@ -37,7 +37,7 @@ class TWFAIClientAdapter:
         """
         Send a prompt to the AI model.
 
-        This method matches TWF's expected signature: returns (text, duration) tuple.
+        This method matches MOSAIC's expected signature: returns (text, duration) tuple.
 
         Args:
             model: Model identifier
@@ -52,10 +52,7 @@ class TWFAIClientAdapter:
 
         # Call the underlying client's prompt method
         response = self._client.prompt(
-            model=model,
-            prompt=prompt,
-            images=images,
-            **kwargs
+            model=model, prompt=prompt, images=images, **kwargs
         )
 
         # Return in the format expected by TWF: (text, duration)
@@ -86,10 +83,7 @@ class TWFAIClientAdapter:
 
 
 def create_ai_client(
-    provider: str,
-    api_key: str,
-    system_prompt: Optional[str] = None,
-    **settings
+    provider: str, api_key: str, system_prompt: Optional[str] = None, **settings
 ) -> TWFAIClientAdapter:
     """
     Factory function to create an AI client compatible with TWF's interface.
@@ -108,16 +102,12 @@ def create_ai_client(
 
     Example:
         >>> client = create_ai_client('openai', api_key='sk-...')
-        >>> response, duration = client.prompt('gpt-4', 'Hello!')
+        >>> response = client.prompt('gpt-4', 'Hello!')
         >>> print(f"Response: {response}")
-        >>> print(f"Duration: {duration}s")
     """
     # Create the underlying generic-llm-api-client
     underlying_client = _create_ai_client(
-        provider=provider,
-        api_key=api_key,
-        system_prompt=system_prompt,
-        **settings
+        provider=provider, api_key=api_key, system_prompt=system_prompt, **settings
     )
 
     # Wrap it in our adapter

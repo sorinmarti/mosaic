@@ -1,134 +1,72 @@
 $(document).ready(function() {
-    const saveButton = document.getElementById("savePrompt");
-    const loadButton = document.getElementById("loadPrompt");
-    const promptSelect = document.querySelector("select[name='saved_prompts']");
-    const roleInput = document.querySelector("input[name='role_description']");
-    const promptInput = document.querySelector("textarea[name='prompt']");
+    const aiConfigSelect = document.querySelector("select[name='ai_configuration']");
+    const previewCard = document.getElementById("ai-config-preview");
 
-    // If any critical elements are missing, exit
-    if (!saveButton || !loadButton || !promptSelect || !roleInput || !promptInput) {
-        console.warn("AI Prompt Manager: Required elements not found, skipping initialization.");
+    // If AI configuration selector doesn't exist, exit
+    if (!aiConfigSelect) {
+        console.warn("AI Configuration Manager: AI config selector not found, skipping initialization.");
         return;
     }
 
-    $("#id_saved_prompts").select2({
-        templateResult: formatDropdown,
-        templateSelection: formatDropdown
-    });
-    updateDropdown(null);
-
-    // Save Prompt
-    saveButton.addEventListener("click", function() {
-
-        const promptId = promptSelect.value;
-        const role = roleInput.value;
-        const promptText = promptInput.value;
-
-        if (!promptText.trim()) {
-            do_alert("Prompt text cannot be empty.", "warning");
-            return;
-        }
-        if (!role.trim()) {
-            do_alert("Prompt text cannot be empty.", "warning");
-            return;
-        }
-
-        fetch("/ajax/save/prompt/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCSRFToken(),
-            },
-            body: JSON.stringify({
-                prompt_id: promptId !== "--------" ? promptId : null,
-                role: role,
-                prompt: promptText
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.id) {
-                do_alert("Prompt saved successfully!", "success");
-                // Update dropdown and select the new prompt
-                updateDropdown(data.id);
-            } else {
-                do_alert("Error: " + data.error, "danger");
-            }
-        })
-        .catch(error => do_alert("Error saving prompt.", "danger"));
+    // Initialize Select2 for AI configuration dropdown with custom formatting
+    $("#id_ai_configuration").select2({
+        templateResult: formatAIConfigDropdown,
+        templateSelection: formatAIConfigSelection,
+        width: '100%'
     });
 
-    // Function to update the dropdown
-    function updateDropdown(selectedId) {
-        fetch("/ajax/get/prompts/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCSRFToken(),
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.prompts) {
-                $(promptSelect).empty();
-                $(promptSelect).append(new Option("--------", "")); // Default option
+    // Load AI Configuration preview when selected
+    $(aiConfigSelect).on("change", function() {
+        const configId = this.value;
 
-                data.prompts.forEach(prompt => {
-                    let truncatedPrompt = prompt.prompt.length > 50
-                        ? prompt.prompt.substring(0, 50) + "…"
-                        : prompt.prompt;
-
-                    let $option = $(`<option></option>`)
-                        .val(prompt.id)
-                        .text(`${prompt.role} - ${truncatedPrompt}`)
-                        .attr("data-role", prompt.role)
-                        .attr("data-prompt", truncatedPrompt);
-                    $(promptSelect).append($option);
-                });
-
-                // Reinitialize Select2
-                $(promptSelect).select2({
-                    templateResult: formatDropdown,
-                    templateSelection: formatDropdown
-                });
-
-                // Select the newly saved prompt
-                $(promptSelect).val(selectedId).trigger("change");
+        if (!configId) {
+            // User selected empty option, hide preview
+            if (previewCard) {
+                previewCard.style.display = 'none';
             }
-        })
-        .catch(error => do_alert("Error fetching prompts.", "danger"));
-    }
-
-
-    // Load Prompt
-    loadButton.addEventListener("click", function() {
-        console.log("Loading Prompt...");
-
-        const promptId = promptSelect.value;
-        if (!promptId || promptId === "--------") {
-            do_alert("Please select a valid prompt.", "warning");
             return;
         }
 
-        fetch("/ajax/load/prompt/", {
-            method: "POST",
+        // Show loading indicator
+        do_alert("Loading AI Configuration...", "info");
+
+        fetch(`/ajax/ai-config/${configId}/`, {
+            method: "GET",
             headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCSRFToken(),  // CSRF protection
+                "X-CSRFToken": getCSRFToken(),
             },
-            body: JSON.stringify({ prompt_id: promptId }),
         })
         .then(response => response.json())
         .then(data => {
-            if (data.prompt) {
-                roleInput.value = data.role;
-                promptInput.value = data.prompt;
-            } else {
-                do_alert("Error loading prompt: " + data.error, "danger");
+            if (data.error) {
+                do_alert("Error loading AI Configuration: " + data.error, "danger");
+                if (previewCard) {
+                    previewCard.style.display = 'none';
+                }
+                return;
             }
+
+            // Display preview
+            if (previewCard) {
+                document.getElementById("preview-provider").textContent = data.provider || "N/A";
+                document.getElementById("preview-model").textContent = data.model || "N/A";
+                document.getElementById("preview-temperature").textContent = data.temperature || "0.7";
+                document.getElementById("preview-max-tokens").textContent = data.max_tokens || "1000";
+                document.getElementById("preview-role").textContent = data.system_role || "No system role defined";
+                document.getElementById("preview-prompt").textContent = data.prompt_template || "No prompt template defined";
+
+                previewCard.style.display = 'block';
+            }
+
+            do_alert(`Loaded: ${data.name}`, "success");
         })
-        .catch(error => do_alert("Error loading prompt." + error, "danger"));
+        .catch(error => {
+            console.error("Error loading AI configuration:", error);
+            do_alert("Error loading AI configuration.", "danger");
+            if (previewCard) {
+                previewCard.style.display = 'none';
+            }
+        });
     });
 
     // CSRF Token Helper Function
@@ -148,30 +86,49 @@ $(document).ready(function() {
 
         // Bootstrap alert HTML
         const alertDiv = document.createElement("div");
-        alertDiv.className = `alert alert-${type}`;
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.role = "alert";
         alertDiv.innerHTML = `
             ${message}
-            <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
 
         messagesContainer.appendChild(alertDiv);
 
         // Automatically remove the alert after 5 seconds
         setTimeout(() => {
-            alertDiv.remove();
+            $(alertDiv).alert('close');
         }, 5000);
     }
-    this.do_alert = do_alert;
 
-    function formatDropdown(option) {
+    // Format AI Config dropdown to show name and provider in the dropdown list
+    function formatAIConfigDropdown(option) {
         if (!option.id) {
             return option.text;
         }
 
-        let role = $(option.element).attr("data-role") || "Unknown Role";
-        let promptText = $(option.element).attr("data-prompt") || "No prompt text available";
+        const $option = $(option.element);
+        const provider = $option.attr("data-provider") || "";
+        const model = $option.attr("data-model") || "";
 
-        return $(`<div><strong>${role}</strong><br><small>${promptText}</small></div>`);
+        if (provider || model) {
+            return $(`
+                <div>
+                    <strong>${option.text}</strong>
+                    <br>
+                    <small class="text-muted">${provider} - ${model}</small>
+                </div>
+            `);
+        }
+
+        return option.text;
+    }
+
+    // Format selected AI Config (shown in the select box when closed)
+    function formatAIConfigSelection(option) {
+        if (!option.id) {
+            return option.text;
+        }
+        return option.text;
     }
 });

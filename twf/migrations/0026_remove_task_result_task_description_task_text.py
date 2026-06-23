@@ -6,22 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0025_task'),
+        ("twf", "0025_task"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='task',
-            name='result',
+            model_name="task",
+            name="result",
         ),
         migrations.AddField(
-            model_name='task',
-            name='description',
-            field=models.TextField(blank=True, default=''),
+            model_name="task",
+            name="description",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AddField(
-            model_name='task',
-            name='text',
-            field=models.TextField(blank=True, default=''),
+            model_name="task",
+            name="text",
+            field=models.TextField(blank=True, default=""),
         ),
     ]

@@ -6,13 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0054_rename_authorization_data_dictionaryentry_metadata_and_more'),
+        ("twf", "0054_rename_authorization_data_dictionaryentry_metadata_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='export',
-            name='export_type',
-            field=models.CharField(choices=[('documents', 'Documents'), ('pages', 'Pages'), ('collection', 'Collection'), ('project', 'Project')], max_length=20),
+            model_name="export",
+            name="export_type",
+            field=models.CharField(
+                choices=[
+                    ("documents", "Documents"),
+                    ("pages", "Pages"),
+                    ("collection", "Collection"),
+                    ("project", "Project"),
+                ],
+                max_length=20,
+            ),
         ),
     ]

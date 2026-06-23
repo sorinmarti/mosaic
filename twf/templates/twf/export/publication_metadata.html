@@ -1,0 +1,211 @@
+{% extends 'twf/base/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Publication Metadata</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Configure publication metadata for your project exports. This information is used when exporting your data to repositories like Zenodo.</p>
+            {% crispy form %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const descriptionField = document.getElementById("workflow_description");
+        const previewDiv = document.getElementById("div_id_workflow_description_preview");
+        const generateButton = document.getElementById("generate_md");
+        const PROJECT_ID = "{{ project.id }}";
+
+        function updateMarkdownPreview() {
+            // Always get the current reference to the description field
+            // (It might have been replaced in the DOM)
+            const currentDescriptionField = document.getElementById("workflow_description");
+            const markdownText = currentDescriptionField ? currentDescriptionField.value : "";
+
+            fetch("/ajax/markdown-preview/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: JSON.stringify({ text: markdownText }),
+            })
+            .then(response => response.text())
+            .then(html => {
+                previewDiv.innerHTML = html;
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+        // Live update preview on input
+        descriptionField.addEventListener("input", updateMarkdownPreview);
+
+        // Store a reference to the confirmation modal for reuse
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        const confirmButton = document.getElementById('confirmActionButton');
+
+        // Single reference to the handler function for proper cleanup
+        let confirmHandler = null;
+
+        // Function to reset and clean up event listeners
+        function cleanupHandlers() {
+            if (confirmHandler) {
+                confirmButton.removeEventListener('click', confirmHandler);
+                confirmHandler = null;
+            }
+        }
+
+        // When modal is hidden, clean up
+        $('#confirmModal').on('hidden.bs.modal', cleanupHandlers);
+
+        // Create a custom action for the Generate Default button
+        generateButton.addEventListener("click", function() {
+            // Clean up any existing handlers first
+            cleanupHandlers();
+
+            // Set the modal message
+            document.querySelector('#confirmModal .modal-body').innerHTML =
+                'This will replace your current workflow description with a generated default. Are you sure you want to continue?';
+
+            // Create new handler function
+            confirmHandler = function() {
+                // Generate the markdown
+                fetch("/ajax/markdown-generate/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken"),
+                    },
+                    body: JSON.stringify({ project_id: PROJECT_ID }),
+                })
+                .then(response => response.text())
+                .then(markdown => {
+                    // Much simpler and more reliable approach
+                    // Just directly set the value and force a fresh preview
+                    // Get the most current reference to the field
+                    const currentField = document.getElementById("workflow_description");
+                    if (currentField) {
+                        // First clear the field
+                        currentField.value = "";
+
+                        // Then set the new content after a brief delay
+                        setTimeout(() => {
+                            currentField.value = markdown.trim();
+
+                            // Create a custom input event to trigger any listeners
+                            const inputEvent = new Event('input', { bubbles: true });
+                            currentField.dispatchEvent(inputEvent);
+
+                            // Also manually update the preview to be safe
+                            updateMarkdownPreview();
+                            confirmModal.hide();
+                        }, 50);
+                    } else {
+                        console.error("Could not find workflow description field");
+                        confirmModal.hide();
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    confirmModal.hide();
+                });
+            };
+
+            // Add the click handler
+            confirmButton.addEventListener('click', confirmHandler);
+
+            // Show the modal
+            confirmModal.show();
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Init the preview
+        updateMarkdownPreview();
+        let keywordsField = $('#id_keywords');
+
+        // Get the existing keywords data before destroying the widget
+        let currentKeywords = keywordsField.attr("data-value");  // Read the injected data-value
+        let parsedKeywords = [];
+
+        if (currentKeywords) {
+            try {
+                parsedKeywords = JSON.parse(currentKeywords);  // Convert JSON string to array
+            } catch (e) {
+                console.error("Error parsing keywords:", e);
+            }
+        }
+
+        // Initialize Select2 - Override the Select2 initialization to fix token separators
+        // We don't destroy the instance as it may cause issues with initial data loading
+        keywordsField.select2({
+            tags: true,                  // Allows adding new tags
+            width: '100%',
+            multiple: true,
+            tokenSeparators: [','],      // Only use comma as separator, not spaces
+            dropdownAutoWidth: true,     // Make dropdown width auto-adjust
+
+            // Handle tag creation
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+
+                // Only create tag when Enter is pressed or comma is used
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+        });
+
+        // Force override token separators to prevent spaces from creating tags
+        keywordsField.data('select2').options.options.tokenSeparators = [','];
+
+        // Add the existing tags after Select2 is initialized
+        if (parsedKeywords.length > 0) {
+            // Clear existing options first
+            keywordsField.empty();
+
+            // Add each keyword as an option and select it
+            parsedKeywords.forEach(keyword => {
+                let newOption = new Option(keyword, keyword, true, true);
+                keywordsField.append(newOption);
+            });
+
+            // Trigger the change to update Select2
+            keywordsField.trigger('change');
+        }
+
+        // Add explicit override for space key
+        $(document).on('keypress', '.select2-search__field', function(e) {
+            // Allow spaces in the search input (32 is the keycode for space)
+            if (e.which === 32) {
+                e.stopPropagation();
+                return true;
+            }
+        });
+
+    });
+</script>
+{% endblock %}

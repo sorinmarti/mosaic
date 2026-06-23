@@ -7,32 +7,54 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0044_workflow_assigned_collection_items_and_more'),
+        ("twf", "0044_workflow_assigned_collection_items_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='collectionitem',
-            options={'ordering': ['title']},
+            name="collectionitem",
+            options={"ordering": ["title"]},
         ),
         migrations.AlterField(
-            model_name='collectionitem',
-            name='document',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='collections', to='twf.document'),
+            model_name="collectionitem",
+            name="document",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="collections",
+                to="twf.document",
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='owner',
-            field=models.ForeignKey(help_text='The owner of the project. This user has all the permissions.', on_delete=django.db.models.deletion.CASCADE, related_name='owned_projects', to='twf.userprofile', verbose_name='Project Owner'),
+            model_name="project",
+            name="owner",
+            field=models.ForeignKey(
+                help_text="The owner of the project. This user has all the permissions.",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="owned_projects",
+                to="twf.userprofile",
+                verbose_name="Project Owner",
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='selected_dictionaries',
-            field=models.ManyToManyField(blank=True, help_text='The dictionaries selected for this project.These will be used for assigning tags.', related_name='selected_projects', to='twf.dictionary', verbose_name='Selected Dictionaries'),
+            model_name="project",
+            name="selected_dictionaries",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="The dictionaries selected for this project.These will be used for assigning tags.",
+                related_name="selected_projects",
+                to="twf.dictionary",
+                verbose_name="Selected Dictionaries",
+            ),
         ),
         migrations.AlterField(
-            model_name='project',
-            name='title',
-            field=models.CharField(help_text='The title of the project. This can be any string, needs to be less than 100 characters. Can be used in data exports.', max_length=100, verbose_name='Project Title'),
+            model_name="project",
+            name="title",
+            field=models.CharField(
+                help_text="The title of the project. This can be any string, needs to be less than 100 characters. Can be used in data exports.",
+                max_length=100,
+                verbose_name="Project Title",
+            ),
         ),
     ]

@@ -8,42 +8,107 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0040_task_meta'),
+        ("twf", "0040_task_meta"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='collectionitem',
-            name='is_reserved',
+            model_name="collectionitem",
+            name="is_reserved",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='dictionaryentry',
-            name='is_reserved',
+            model_name="dictionaryentry",
+            name="is_reserved",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='document',
-            name='is_reserved',
+            model_name="document",
+            name="is_reserved",
             field=models.BooleanField(default=False),
         ),
         migrations.CreateModel(
-            name='Workflow',
+            name="Workflow",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('workflow_type', models.CharField(choices=[('review_documents', 'Review Documents'), ('review_collection', 'Review Collection'), ('supervised_dictionary', 'Supervised Dictionary Workflow')], max_length=50)),
-                ('status', models.CharField(choices=[('started', 'Started'), ('ended', 'Ended')], default='started', max_length=20)),
-                ('item_count', models.PositiveIntegerField()),
-                ('current_item_index', models.PositiveIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('assigned_items', models.ManyToManyField(related_name='workflows', to='twf.document')),
-                ('collection', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='twf.collection')),
-                ('dictionary', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='twf.dictionary')),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='twf.project')),
-                ('related_task', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='workflow', to='twf.task')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workflows', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "workflow_type",
+                    models.CharField(
+                        choices=[
+                            ("review_documents", "Review Documents"),
+                            ("review_collection", "Review Collection"),
+                            ("supervised_dictionary", "Supervised Dictionary Workflow"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("started", "Started"), ("ended", "Ended")],
+                        default="started",
+                        max_length=20,
+                    ),
+                ),
+                ("item_count", models.PositiveIntegerField()),
+                ("current_item_index", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "assigned_items",
+                    models.ManyToManyField(related_name="workflows", to="twf.document"),
+                ),
+                (
+                    "collection",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="twf.collection",
+                    ),
+                ),
+                (
+                    "dictionary",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="twf.dictionary",
+                    ),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="twf.project"
+                    ),
+                ),
+                (
+                    "related_task",
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="workflow",
+                        to="twf.task",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workflows",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

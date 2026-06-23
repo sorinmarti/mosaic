@@ -1,4 +1,5 @@
 """ Utility functions to parse date strings. """
+
 import re
 import dateparser
 from datetime import datetime
@@ -24,7 +25,7 @@ month_abbreviations = {
 
 
 def parse_date_string(date_string, resolve_to="day", date_format="DMY"):
-    """ Parse the date string using dateparser and return the date in EDTF format. """
+    """Parse the date string using dateparser and return the date in EDTF format."""
 
     parsed_date = parse_year_only(date_string, resolve_to)
 
@@ -38,7 +39,7 @@ def parse_date_string(date_string, resolve_to="day", date_format="DMY"):
 
 
 def parse_year_only(date_string, resolve_to):
-    """ Parse the date string if it only contains a year. """
+    """Parse the date string if it only contains a year."""
 
     # Check if the date string contains only a year
     date_string = date_string.strip()
@@ -54,7 +55,7 @@ def parse_year_only(date_string, resolve_to):
 
 
 def parse_month_year(date_string, resolve_to):
-    """ Parse the date string if it contains a month and a year. """
+    """Parse the date string if it contains a month and a year."""
     regex = r"^([\w\.éèû]*) (\d{4})$"
     match = re.match(regex, date_string)
     if match:
@@ -75,19 +76,19 @@ def parse_month_year(date_string, resolve_to):
 
 
 def parse_with_dateparser(date_string, resolve_to, date_format):
-    """ Parse the date string using dateparser. """
+    """Parse the date string using dateparser."""
 
     settings = {
-        'PREFER_DAY_OF_MONTH': 'first',  # If day is missing, assume first
-        'PREFER_DATES_FROM': 'past',  # Choose dates from past by default
-        'RELATIVE_BASE': datetime.now(),  # To parse relative dates like 'today'
-        'STRICT_PARSING': True,  # Avoid parsing incomplete dates unless valid
+        "PREFER_DAY_OF_MONTH": "first",  # If day is missing, assume first
+        "PREFER_DATES_FROM": "past",  # Choose dates from past by default
+        "RELATIVE_BASE": datetime.now(),  # To parse relative dates like 'today'
+        "STRICT_PARSING": True,  # Avoid parsing incomplete dates unless valid
     }
 
     if date_format == "DMY":
-        settings['DATE_ORDER'] = 'DMY'
+        settings["DATE_ORDER"] = "DMY"
     elif date_format == "MDY":
-        settings['DATE_ORDER'] = 'MDY'
+        settings["DATE_ORDER"] = "MDY"
 
     parsed_date = dateparser.parse(date_string, settings=settings)
 

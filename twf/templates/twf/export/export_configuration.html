@@ -5,10 +5,16 @@
 
 {% block content %}
     {% include 'twf/base/export_config_modal.html' %}
-     <div class="parent-container">
-         <p class="lead">Configure how your project is exported to JSON data.</p>
-         {% crispy form %}
-     </div>
+
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Create Export Configuration</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Configure how your project data is exported to JSON format.</p>
+            {% crispy form %}
+        </div>
+    </div>
 
     <!-- fake hidden button to trigger the modal -->
     <button type="button" id="confirmDangerActionTrigger"

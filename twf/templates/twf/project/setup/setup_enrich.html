@@ -2,12 +2,12 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <div class="border rounded bg-light mt-0 p-3">
-        <p class="lead">This page enables you to enrich your documents with additional metadata
-            from the Transkribus API that is not available in the PageXML export.</p>
-
-        <div class="alert alert-info" role="alert">
-            <h5 class="alert-heading"><i class="fa fa-info-circle me-2"></i>What does this do?</h5>
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fa fa-info-circle me-2"></i>What does this do?</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">This page enables you to enrich your documents with additional metadata from the Transkribus API that is not available in the PageXML export.</p>
             <p class="mb-2">
                 This task fetches additional metadata for your documents from the Transkribus API:
             </p>
@@ -21,18 +21,24 @@
                 for filtering and organization.
             </p>
         </div>
+    </div>
 
-        {% if not project.collection_id %}
-            <div class="alert alert-warning" role="alert">
-                <h4 class="alert-heading">Collection ID not set</h4>
-                <p>
-                    You need to set up your Transkribus collection ID first.
-                    Please go to the <a href="{% url 'twf:project_settings_general' %}">Project Settings</a> page.
-                </p>
-            </div>
-        {% endif %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Enrich Documents</h5>
+        </div>
+        <div class="card-body">
+            {% if not project.collection_id %}
+                <div class="alert alert-warning" role="alert">
+                    <h4 class="alert-heading">Collection ID not set</h4>
+                    <p class="mb-0">
+                        You need to set up your Transkribus collection ID first.
+                        Please go to the <a href="{% url 'twf:project_settings_general' %}">Project Settings</a> page.
+                    </p>
+                </div>
+            {% endif %}
 
-        {% crispy form %}
-
+            {% crispy form %}
+        </div>
     </div>
 {% endblock %}

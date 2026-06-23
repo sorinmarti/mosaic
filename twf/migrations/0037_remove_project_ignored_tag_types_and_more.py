@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0036_remove_project_document_metadata_fields_and_more'),
+        ("twf", "0036_remove_project_document_metadata_fields_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='project',
-            name='ignored_tag_types',
+            model_name="project",
+            name="ignored_tag_types",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='tag_type_translator',
+            model_name="project",
+            name="tag_type_translator",
         ),
     ]

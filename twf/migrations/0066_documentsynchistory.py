@@ -8,32 +8,110 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0065_project_conf_display'),
+        ("twf", "0065_project_conf_display"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DocumentSyncHistory',
+            name="DocumentSyncHistory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('modified_at', models.DateTimeField(auto_now=True)),
-                ('sync_type', models.CharField(choices=[('created', 'Created'), ('updated', 'Updated'), ('unchanged', 'Unchanged'), ('deleted', 'Deleted')], default='updated', max_length=20)),
-                ('changes', models.JSONField(blank=True, default=dict)),
-                ('synced_at', models.DateTimeField(auto_now_add=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_%(class)s_set', to=settings.AUTH_USER_MODEL)),
-                ('document', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sync_history', to='twf.document')),
-                ('modified_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='modified_%(class)s_set', to=settings.AUTH_USER_MODEL)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='document_sync_history', to='twf.project')),
-                ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='document_syncs', to='twf.task')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='document_syncs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("modified_at", models.DateTimeField(auto_now=True)),
+                (
+                    "sync_type",
+                    models.CharField(
+                        choices=[
+                            ("created", "Created"),
+                            ("updated", "Updated"),
+                            ("unchanged", "Unchanged"),
+                            ("deleted", "Deleted"),
+                        ],
+                        default="updated",
+                        max_length=20,
+                    ),
+                ),
+                ("changes", models.JSONField(blank=True, default=dict)),
+                ("synced_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_%(class)s_set",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "document",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="sync_history",
+                        to="twf.document",
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="modified_%(class)s_set",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="document_sync_history",
+                        to="twf.project",
+                    ),
+                ),
+                (
+                    "task",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="document_syncs",
+                        to="twf.task",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="document_syncs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Document Sync History',
-                'verbose_name_plural': 'Document Sync Histories',
-                'ordering': ['-synced_at'],
-                'indexes': [models.Index(fields=['document', '-synced_at'], name='twf_documen_documen_3cad58_idx'), models.Index(fields=['task'], name='twf_documen_task_id_6a7e9d_idx'), models.Index(fields=['project', '-synced_at'], name='twf_documen_project_0b4c53_idx')],
+                "verbose_name": "Document Sync History",
+                "verbose_name_plural": "Document Sync Histories",
+                "ordering": ["-synced_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["document", "-synced_at"],
+                        name="twf_documen_documen_3cad58_idx",
+                    ),
+                    models.Index(
+                        fields=["task"], name="twf_documen_task_id_6a7e9d_idx"
+                    ),
+                    models.Index(
+                        fields=["project", "-synced_at"],
+                        name="twf_documen_project_0b4c53_idx",
+                    ),
+                ],
             },
         ),
     ]

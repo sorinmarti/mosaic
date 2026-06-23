@@ -5,11 +5,11 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'twf/documents/info_card_documents.html' %}
-    
+    <p class="lead">Overview of your project documents, pages, and parsing statistics.</p>
+
     <div class="row mt-3">
         <!-- Document Content Section -->
-        <div class="col-md-8">
+        <div class="col-md-12">
             <!-- Document Stats -->
             <div class="card mb-4">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
@@ -212,94 +212,6 @@
                     {% endif %}
                 </div>
             </div>
-        </div>
-        
-        <!-- Document Actions -->
-        <div class="col-md-4">
-            <!-- Quick Actions -->
-            <div class="card mb-4">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Document Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'twf:documents_browse' %}" class="btn btn-outline-primary">
-                            <i class="fa fa-list me-2"></i> Browse Documents
-                        </a>
-                        <a href="{% url 'twf:documents_search' %}" class="btn btn-outline-info">
-                            <i class="fa fa-search me-2"></i> Search Documents
-                        </a>
-                        <a href="{% url 'twf:name_documents' %}" class="btn btn-outline-success">
-                            <i class="fa fa-font me-2"></i> Name Documents
-                        </a>
-                        <a href="{% url 'twf:documents_review' %}" class="btn btn-outline-warning">
-                            <i class="fa fa-check-square me-2"></i> Review Documents
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Recent Documents -->
-            {% if recent_documents %}
-            <div class="card mb-4">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Recent Documents</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for doc in recent_documents %}
-                        <a href="{% url 'twf:view_document' doc.id %}" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1 text-truncate">{{ doc.title|default:"Untitled Document" }}</h6>
-                                <small class="text-muted">{{ doc.created_at|timesince }}</small>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small>
-                                    <span class="badge {% if doc.status == 'completed' %}bg-success{% elif doc.is_parked %}bg-secondary{% else %}bg-warning{% endif %}">
-                                        {% if doc.status == 'completed' %}Completed{% elif doc.is_parked %}Parked{% else %}In Progress{% endif %}
-                                    </span>
-                                </small>
-                                <small class="text-muted">{{ doc.pages.count }} pages</small>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Document Sample -->
-            {% if sample_document %}
-            <div class="card mb-4">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Sample Document Preview</h5>
-                </div>
-                <div class="card-body">
-                    <h6 class="mb-2">{{ sample_document.title|default:"Untitled Document" }}</h6>
-                    <p class="small text-muted mb-3">
-                        {{ sample_document.pages.count }} pages | 
-                        Created: {{ sample_document.created_at|date:"M d, Y" }}
-                    </p>
-                    
-                    {% if sample_document.pages.exists %}
-                        {% with first_page=sample_document.pages.first %}
-                            {% if first_page.image %}
-                                <div class="text-center mb-3">
-                                    <img src="{{ first_page.image.url }}" alt="Sample page" class="img-fluid img-thumbnail" style="max-height: 200px;">
-                                </div>
-                            {% endif %}
-                            <div class="d-grid">
-                                <a href="{% url 'twf:view_document' sample_document.id %}" class="btn btn-sm btn-outline-primary">
-                                    View Complete Document
-                                </a>
-                            </div>
-                        {% endwith %}
-                    {% else %}
-                        <p class="text-muted">This document has no pages.</p>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 {% endblock %}

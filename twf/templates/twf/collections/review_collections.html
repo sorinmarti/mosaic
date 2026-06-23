@@ -3,19 +3,40 @@
 
 {% block content %}
     {% if has_active_workflow %}
-        <p>There is an active Review Collection Items Workflow for user {{ request.user }}.</p>
+        <div class="row">
+            <div class="col-12">
+                {% url 'twf:end_review_collection_workflow' as end_url %}
+                {% include 'twf/includes/workflow_progress_card.html' with workflow=workflow workflow_definition=workflow_definition end_workflow_url=end_url %}
+            </div>
+        </div>
         {% crispy form %}
     {% else %}
-         <p>There is no active Review Collection Items Workflow for user {{ request.user }}.</p>
-        {% for col in collections.all %}
-            <button
-              type="button"
-              class="btn btn-dark show-confirm-modal"
-              data-message="Do you really want to start a Review workflow?"
-              data-redirect-url="{% url 'twf:start_review_collection_workflow' col.id %}">
-              Start Review Workflow for '{{ col.title }}'
-            </button>
-        {% endfor %}
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Start Review Workflow</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Review and update collection items in a structured workflow. Select a collection to begin.</p>
+
+                {% if collections.all %}
+                    <div class="d-grid gap-2">
+                        {% for col in collections.all %}
+                            <button
+                              type="button"
+                              class="btn btn-dark show-confirm-modal"
+                              data-message="Do you really want to start a Review workflow for '{{ col.title }}'?"
+                              data-redirect-url="{% url 'twf:start_review_collection_workflow' col.id %}">
+                              <i class="fa fa-play"></i> Start Review Workflow for '{{ col.title }}'
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fa fa-info-circle"></i> No collections available. Create a collection first.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
 {% endblock %}
 

@@ -1,0 +1,169 @@
+{% extends 'twf/base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ ai_config.name }}</h2>
+        <div>
+            <a href="{% url 'twf:project_ai_config_edit' ai_config.pk %}" class="btn btn-secondary">
+                <i class="fa fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'twf:project_ai_config_test' ai_config.pk %}" class="btn btn-success">
+                <i class="fa fa-flask"></i> Test
+            </a>
+            <a href="{% url 'twf:project_ai_config_delete' ai_config.pk %}" class="btn btn-danger">
+                <i class="fa fa-trash"></i> Delete
+            </a>
+            <a href="{% url 'twf:project_ai_configs' %}" class="btn btn-outline-secondary">
+                <i class="fa fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    {% if not ai_config.is_active %}
+    <div class="alert alert-warning">
+        <i class="fa fa-exclamation-triangle"></i>
+        This configuration is <strong>inactive</strong> and will not appear in workflow selectors.
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Identity and Provider -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configuration Identity</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">{{ ai_config.name }}</dd>
+
+                        <dt class="col-sm-4">Description:</dt>
+                        <dd class="col-sm-8">{{ ai_config.description|default:"<em>No description</em>"|safe }}</dd>
+
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            {% if ai_config.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Usage Count:</dt>
+                        <dd class="col-sm-8">{{ ai_config.usage_count }} time{{ ai_config.usage_count|pluralize }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Provider & Model</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Provider:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info">{{ ai_config.get_provider_display }}</span>
+                        </dd>
+
+                        <dt class="col-sm-4">Model:</dt>
+                        <dd class="col-sm-8"><code>{{ ai_config.model }}</code></dd>
+
+                        <dt class="col-sm-4">API Key:</dt>
+                        <dd class="col-sm-8">
+                            <code>{{ ai_config.api_key|slice:":10" }}...{{ ai_config.api_key|slice:"-4:" }}</code>
+                            <small class="text-muted">(hidden for security)</small>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompt Configuration -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Prompt Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <h6>System Role:</h6>
+                    <pre class="bg-light p-3 rounded">{{ ai_config.system_role }}</pre>
+
+                    <h6 class="mt-3">Prompt Template:</h6>
+                    <pre class="bg-light p-3 rounded">{{ ai_config.prompt_template }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Execution Settings -->
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Execution Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Temperature:</strong><br>
+                            <code>{{ ai_config.temperature|default:"0.5" }}</code>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Max Tokens:</strong><br>
+                            <code>{{ ai_config.max_tokens|default:"2048" }}</code>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Top P:</strong><br>
+                            <code>{{ ai_config.top_p|default:"1.0" }}</code>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Seed:</strong><br>
+                            <code>{{ ai_config.seed|default:"None" }}</code>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong>Frequency Penalty:</strong><br>
+                            <code>{{ ai_config.frequency_penalty|default:"0.0" }}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Presence Penalty:</strong><br>
+                            <code>{{ ai_config.presence_penalty|default:"0.0" }}</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Metadata</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-2">Created:</dt>
+                        <dd class="col-sm-4">
+                            {{ ai_config.created_at|date:"Y-m-d H:i" }}
+                            {% if ai_config.created_by %}
+                            by {{ ai_config.created_by.username }}
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-2">Modified:</dt>
+                        <dd class="col-sm-4">
+                            {{ ai_config.modified_at|date:"Y-m-d H:i" }}
+                            {% if ai_config.modified_by %}
+                            by {{ ai_config.modified_by.username }}
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

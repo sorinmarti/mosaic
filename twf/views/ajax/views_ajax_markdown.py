@@ -1,4 +1,5 @@
 """Views for AJAX requests related to Markdown processing."""
+
 import json
 
 from django.http import JsonResponse, HttpResponse
@@ -7,6 +8,7 @@ from markdown import markdown
 
 from twf.models import Project
 from twf.clients.zenodo_client import create_project_md
+
 
 @csrf_exempt
 def ajax_markdown_generate(request):

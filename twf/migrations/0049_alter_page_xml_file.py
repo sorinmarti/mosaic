@@ -7,13 +7,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0048_alter_collection_created_by_and_more'),
+        ("twf", "0048_alter_collection_created_by_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='page',
-            name='xml_file',
-            field=models.FileField(max_length=255, upload_to=twf.models.page_directory_path),
+            model_name="page",
+            name="xml_file",
+            field=models.FileField(
+                max_length=255, upload_to=twf.models.page_directory_path
+            ),
         ),
     ]

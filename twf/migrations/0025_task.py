@@ -9,22 +9,54 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0024_alter_project_claude_api_key_and_more'),
+        ("twf", "0024_alter_project_claude_api_key_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Task',
+            name="Task",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('task_id', models.CharField(max_length=255, unique=True)),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('STARTED', 'Started'), ('SUCCESS', 'Success'), ('FAILURE', 'Failure')], default='PENDING', max_length=10)),
-                ('start_time', models.DateTimeField(default=django.utils.timezone.now)),
-                ('end_time', models.DateTimeField(blank=True, null=True)),
-                ('result', models.JSONField(blank=True, null=True)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='twf.project')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='tasks', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("task_id", models.CharField(max_length=255, unique=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pending"),
+                            ("STARTED", "Started"),
+                            ("SUCCESS", "Success"),
+                            ("FAILURE", "Failure"),
+                        ],
+                        default="PENDING",
+                        max_length=10,
+                    ),
+                ),
+                ("start_time", models.DateTimeField(default=django.utils.timezone.now)),
+                ("end_time", models.DateTimeField(blank=True, null=True)),
+                ("result", models.JSONField(blank=True, null=True)),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="twf.project"
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="tasks",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

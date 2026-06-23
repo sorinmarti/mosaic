@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0030_prompt'),
+        ("twf", "0030_prompt"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='conf_credentials',
-            field=models.JSONField(blank=True, default=dict, help_text='A dictionary of configuration credentials.', verbose_name='Configuration Credentials'),
+            model_name="project",
+            name="conf_credentials",
+            field=models.JSONField(
+                blank=True,
+                default=dict,
+                help_text="A dictionary of configuration credentials.",
+                verbose_name="Configuration Credentials",
+            ),
         ),
     ]

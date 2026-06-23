@@ -1,4 +1,5 @@
 """Configuration of the project"""
+
 from django.apps import AppConfig
 
 

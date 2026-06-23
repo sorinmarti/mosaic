@@ -7,22 +7,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0061_remove_project_conf_export'),
+        ("twf", "0061_remove_project_conf_export"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='export',
-            name='export_type',
+            model_name="export",
+            name="export_type",
         ),
         migrations.RemoveField(
-            model_name='export',
-            name='project',
+            model_name="export",
+            name="project",
         ),
         migrations.AddField(
-            model_name='export',
-            name='export_configuration',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='exports', to='twf.exportconfiguration'),
+            model_name="export",
+            name="export_configuration",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="exports",
+                to="twf.exportconfiguration",
+            ),
             preserve_default=False,
         ),
     ]

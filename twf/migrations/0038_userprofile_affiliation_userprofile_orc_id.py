@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0037_remove_project_ignored_tag_types_and_more'),
+        ("twf", "0037_remove_project_ignored_tag_types_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userprofile',
-            name='affiliation',
+            model_name="userprofile",
+            name="affiliation",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='userprofile',
-            name='orc_id',
+            model_name="userprofile",
+            name="orc_id",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

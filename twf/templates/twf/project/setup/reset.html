@@ -9,22 +9,7 @@
       <div class="border p-3 mb-3">
         <h4>A Bit Dangerous</h4>
         <p>These actions are not irreversible but still modify your data significantly.</p>
-        
-        <!-- Unpark All Tags -->
-        <div class="row mb-2">
-          <div class="col-8">
-              <p><strong>Unpark all tags:</strong> Unparks all parked tags in the project.</p>
-          </div>
-          <div class="col-4 text-end">
-            <button
-              class="btn btn-secondary show-confirm-modal" 
-              data-message="Are you sure you want to unpark all tags?"
-              data-redirect-url="{% url 'twf:reset_unpark_all_tags' %}">
-              Unpark All Tags
-            </button>
-          </div>
-        </div>
-    
+
         <!-- Delete All Prompts -->
         <div class="row mb-2">
           <div class="col-8">
@@ -43,15 +28,45 @@
         <!-- Delete All Tasks -->
         <div class="row mb-2">
           <div class="col-8">
-              <p><strong>Delete all tasks:</strong> Deletes all tasks. This does not affect your data but removes the
-                  history of performed tasks.</p>
+              <p><strong>Delete all tasks:</strong> Deletes all completed tasks. Active tasks are not removed.</p>
           </div>
           <div class="col-4 text-end">
             <button
-              class="btn btn-secondary show-confirm-modal" 
-              data-message="Are you sure you want to delete all tasks?"
+              class="btn btn-secondary show-confirm-modal"
+              data-message="Are you sure you want to delete all completed tasks?"
               data-redirect-url="{% url 'twf:reset_remove_all_tasks' %}">
               Delete All Tasks
+            </button>
+          </div>
+        </div>
+
+        <!-- Delete Completed Tasks -->
+        <div class="row mb-2">
+          <div class="col-8">
+              <p><strong>Delete completed tasks:</strong> Deletes tasks with status Success, Failure, or Cancelled.</p>
+          </div>
+          <div class="col-4 text-end">
+            <button
+              class="btn btn-secondary show-confirm-modal"
+              data-message="Are you sure you want to delete all completed tasks?"
+              data-redirect-url="{% url 'twf:reset_remove_completed_tasks' %}">
+              Delete Completed Tasks
+            </button>
+          </div>
+        </div>
+
+        <!-- Delete Active Tasks -->
+        <div class="row mb-2">
+          <div class="col-8">
+              <p><strong>Delete active tasks:</strong> Removes task records with status Started, Pending, or In Progress.
+                  Use this to clean up stuck or orphaned tasks. Note: this does not cancel the underlying Celery process.</p>
+          </div>
+          <div class="col-4 text-end">
+            <button
+              class="btn btn-warning show-confirm-modal"
+              data-message="Are you sure you want to delete all active tasks? This will not stop running Celery processes."
+              data-redirect-url="{% url 'twf:reset_remove_active_tasks' %}">
+              Delete Active Tasks
             </button>
           </div>
         </div>
@@ -93,23 +108,7 @@
             </button>
           </div>
         </div>
-    
-        <!-- Remove All Tags -->
-        <div class="row mb-2">
-          <div class="col-8">
-              <p><strong>Delete all tags:</strong> Deletes all tags. Tags can be re-extracted from Transkribus
-                  document data. </p>
-          </div>
-          <div class="col-4 text-end">
-            <button
-              class="btn btn-danger show-danger-modal"
-              data-message="Are you sure you want to delete all tags?"
-              data-redirect-url="{% url 'twf:reset_remove_all_tags' %}">
-              Delete All Tags
-            </button>
-          </div>
-        </div>
-    
+
         <!-- Remove All Collections -->
         <div class="row mb-2">
           <div class="col-8">

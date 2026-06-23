@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0056_note'),
+        ("twf", "0056_note"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='note',
-            name='user',
+            model_name="note",
+            name="user",
         ),
         migrations.AddField(
-            model_name='note',
-            name='title',
-            field=models.CharField(default='', max_length=255),
+            model_name="note",
+            name="title",
+            field=models.CharField(default="", max_length=255),
             preserve_default=False,
         ),
     ]

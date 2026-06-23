@@ -8,28 +8,72 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0029_project_date_normalization_configuration_and_more'),
+        ("twf", "0029_project_date_normalization_configuration_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Prompt',
+            name="Prompt",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('modified_at', models.DateTimeField(auto_now=True)),
-                ('system_role', models.CharField(max_length=100)),
-                ('prompt', models.TextField()),
-                ('collection_context', models.ManyToManyField(blank=True, related_name='prompts', to='twf.collectionitem')),
-                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='created_%(class)s_set', to=settings.AUTH_USER_MODEL)),
-                ('document_context', models.ManyToManyField(blank=True, related_name='prompts', to='twf.document')),
-                ('modified_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='modified_%(class)s_set', to=settings.AUTH_USER_MODEL)),
-                ('page_context', models.ManyToManyField(blank=True, related_name='prompts', to='twf.page')),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='prompts', to='twf.project')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("modified_at", models.DateTimeField(auto_now=True)),
+                ("system_role", models.CharField(max_length=100)),
+                ("prompt", models.TextField()),
+                (
+                    "collection_context",
+                    models.ManyToManyField(
+                        blank=True, related_name="prompts", to="twf.collectionitem"
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="created_%(class)s_set",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "document_context",
+                    models.ManyToManyField(
+                        blank=True, related_name="prompts", to="twf.document"
+                    ),
+                ),
+                (
+                    "modified_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="modified_%(class)s_set",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "page_context",
+                    models.ManyToManyField(
+                        blank=True, related_name="prompts", to="twf.page"
+                    ),
+                ),
+                (
+                    "project",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="prompts",
+                        to="twf.project",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

@@ -1,0 +1,132 @@
+{% extends 'twf/base/base.html' %}
+
+{% block content %}
+    {% if not has_active_workflow %}
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fa fa-check-double"></i> Start Entry Review Workflow</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Step through dictionary entries. Edit the label or remove normalization data
+                    as needed, then mark each as <strong>Reviewed</strong> or
+                    <strong>Park</strong> it for later.
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="start_workflow" value="1">
+
+                    <div class="mb-3">
+                        <label for="dictionary_id" class="form-label">Dictionary</label>
+                        <select name="dictionary_id" id="dictionary_id" class="form-select" required>
+                            <option value="">Select a dictionary…</option>
+                            {% for dictionary in dictionaries %}
+                                <option value="{{ dictionary.id }}">{{ dictionary.label }} ({{ dictionary.type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="batch_size" class="form-label">Batch Size</label>
+                        <input type="number" name="batch_size" id="batch_size" class="form-control"
+                               value="20" min="1" max="200" required>
+                        <div class="form-text">Number of entries to review in this workflow.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark">
+                        <i class="fa fa-play"></i> Start Review Workflow
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        {% if workflow %}
+            {% url 'twf:end_dictionary_review_workflow' as end_url %}
+            {% include 'twf/includes/workflow_progress_card.html' with workflow=workflow workflow_definition=workflow_definition end_workflow_url=end_url %}
+        {% endif %}
+
+        {% if has_next_entry %}
+            <div class="card mb-3">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fa fa-tag"></i> {{ entry.label }}
+                        <span class="badge bg-secondary ms-2">{{ entry.dictionary.label }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+
+                    {# — Label editor — #}
+                    <form method="post" class="mb-3">
+                        {% csrf_token %}
+                        <label class="form-label fw-semibold">Label</label>
+                        <div class="input-group">
+                            <input type="text" name="new_label" class="form-control"
+                                   value="{{ entry.label }}" required>
+                            <button type="submit" name="update_label" value="1"
+                                    class="btn btn-outline-dark">
+                                <i class="fa fa-save"></i> Save Label
+                            </button>
+                        </div>
+                    </form>
+
+                    {# — Normalization data — #}
+                    {% if entry.metadata %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <strong>Normalization Data</strong>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" name="remove_normalization" value="1"
+                                            class="btn btn-sm btn-outline-danger">
+                                        <i class="fa fa-times"></i> Remove All
+                                    </button>
+                                </form>
+                            </div>
+                            <ul class="list-unstyled ms-1 mb-0 small">
+                                {% for key, value in entry.metadata.items %}
+                                    <li>
+                                        <span class="text-muted">{{ key }}:</span>
+                                        {% if value.normalized_value %}
+                                            <span class="badge bg-info text-dark">{{ value.normalized_value }}</span>
+                                        {% else %}
+                                            {{ value|truncatechars:80 }}
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p class="small text-muted mb-3"><i class="fa fa-info-circle"></i> No normalization data.</p>
+                    {% endif %}
+
+                    {% if entry.notes %}
+                        <p class="mb-2 small"><strong>Notes:</strong> {{ entry.notes }}</p>
+                    {% endif %}
+
+                    <p class="mb-0 small text-muted">
+                        Used {{ entry.get_num_usages }} time{{ entry.get_num_usages|pluralize }} in documents.
+                        Status: <span class="badge bg-warning text-dark">{{ entry.get_review_status_display }}</span>
+                    </p>
+                </div>
+                <div class="card-footer d-flex gap-2">
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" name="mark_reviewed" value="1" class="btn btn-success">
+                            <i class="fa fa-check"></i> Mark Reviewed
+                        </button>
+                    </form>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" name="park" value="1" class="btn btn-warning">
+                            <i class="fa fa-pause"></i> Park
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> No more entries to review in this workflow.
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}

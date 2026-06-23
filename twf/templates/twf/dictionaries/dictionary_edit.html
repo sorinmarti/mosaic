@@ -6,11 +6,28 @@
 {% endblock %}
 
 {% block content %}
-    <p class="lead">Change the label without consequences. Changing the type might break tag assignments. </p>
-    {% crispy form %}
-    <h1 class="display-6">
-        Delete {{ dictionary.label }}
-    </h1>
-    <hr/>
-    <a href="" class="mt-2 btn btn-outline-danger">Delete Dictionary {{ dictionary.label }}</a>
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Edit Dictionary</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Change the label without consequences. Changing the type might break tag assignments.</p>
+            {% crispy form %}
+        </div>
+    </div>
+
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fa fa-exclamation-triangle"></i> Danger Zone</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Deleting this dictionary will remove it from your project. This action cannot be undone.</p>
+            <a href="{% url 'twf:dictionaries_remove_from_project' dictionary.pk %}"
+               class="btn btn-danger show-danger-modal"
+               data-redirect-url="{% url 'twf:dictionaries_remove_from_project' dictionary.pk %}"
+               data-message="Are you sure you want to remove '{{ dictionary.label }}' from your project? This cannot be undone.">
+                <i class="fa fa-trash"></i> Remove Dictionary from Project
+            </a>
+        </div>
+    </div>
 {% endblock %}

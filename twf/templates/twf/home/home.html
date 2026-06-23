@@ -5,6 +5,8 @@
 {% endblock %}
 
 {% block content %}
+    <p class="lead">MOSAIC is a platform for managing and enriching transkribus collections.</p>
+
     {% if request.user.is_authenticated %}
 
         {% if project_set %}
@@ -13,22 +15,6 @@
                 <div>
                     You're ready to start working on your project:&nbsp; <strong>{{ project }}</strong>.
                 </div>
-            </div>
-
-            <div>
-                <p>
-                    MOSAIC (Transkribus Work Flow) is a tool designed for managing and enriching document-based projects.
-                    It allows users to import large sets of documents, such as those from Transkribus or
-                    PAGE.XML formats, and enhance them with additional metadata, tags, and dictionary
-                    entries. You can browse, search, and organize documents, apply metadata, and
-                    create structured collections for export.
-                </p>
-                <p>
-                    The tool supports importing data from various formats, managing complex metadata,
-                    and grouping information into meaningful dictionaries. Once your data is organized,
-                    you can export it in customizable formats, such as JSON, for further use in other
-                    systems or analysis environments.
-                </p>
             </div>
         <!-- No project selected -->
         {% else %}
@@ -80,7 +66,7 @@
                                 </div>
                             </div>
                             <div class="card-footer text-center">
-                                <a href="{% url 'twf:project_select' project.id %}" class="btn btn-dark">
+                                <a href="{% url 'twf:project_do_select' project.id %}" class="btn btn-dark">
                                     <i class="fas fa-sign-in-alt me-1"></i> Select Project
                                 </a>
                             </div>

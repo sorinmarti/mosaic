@@ -7,8 +7,6 @@
 {% endblock %}
 
 {% block content %}
-    <p class="lead">All tasks from your project are listed here. Use the filters to narrow down the list.</p>
-
     <!-- Task Statistics Cards -->
     <div class="row mb-4">
         <div class="col-md-3 mb-2">
@@ -57,6 +55,100 @@
         </div>
     </div>
 
+    <!-- Active/Running Tasks Overview -->
+    {% if active_tasks %}
+    <div class="card mb-4 border-primary">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-play-circle me-2"></i>Active Tasks</h5>
+            <span class="badge bg-light text-primary">{{ active_tasks|length }} running</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                {% for task in active_tasks %}
+                <a href="{% url 'twf:task_detail' pk=task.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <strong class="me-2">{{ task.title }}</strong>
+
+                                <!-- Task Type Badge -->
+                                {% if task.task_type == "instant" %}
+                                    <span class="badge bg-secondary me-1"><i class="fas fa-bolt me-1"></i>Instant</span>
+                                {% elif task.task_type == "celery" %}
+                                    <span class="badge bg-primary me-1"><i class="fas fa-cog me-1"></i>Background</span>
+                                {% elif task.task_type == "workflow" %}
+                                    <span class="badge bg-info me-1"><i class="fas fa-stream me-1"></i>Workflow</span>
+                                {% endif %}
+
+                                <!-- Category Badge -->
+                                {% if task.category %}
+                                    {% if task.category == "create" %}
+                                        <span class="badge bg-success me-1"><i class="fas fa-plus me-1"></i>Create</span>
+                                    {% elif task.category == "update" %}
+                                        <span class="badge bg-warning text-dark me-1"><i class="fas fa-edit me-1"></i>Update</span>
+                                    {% elif task.category == "delete" %}
+                                        <span class="badge bg-danger me-1"><i class="fas fa-trash me-1"></i>Delete</span>
+                                    {% elif task.category == "bulk_delete" %}
+                                        <span class="badge bg-danger me-1"><i class="fas fa-trash-alt me-1"></i>Bulk Delete</span>
+                                    {% elif task.category == "import" %}
+                                        <span class="badge bg-info me-1"><i class="fas fa-download me-1"></i>Import</span>
+                                    {% elif task.category == "export" %}
+                                        <span class="badge bg-info me-1"><i class="fas fa-upload me-1"></i>Export</span>
+                                    {% elif task.category == "ai_processing" %}
+                                        <span class="badge bg-primary me-1"><i class="fas fa-robot me-1"></i>AI Processing</span>
+                                    {% elif task.category == "enrichment" %}
+                                        <span class="badge bg-secondary me-1"><i class="fas fa-sparkles me-1"></i>Enrichment</span>
+                                    {% elif task.category == "workflow" %}
+                                        <span class="badge bg-info me-1"><i class="fas fa-stream me-1"></i>Workflow</span>
+                                    {% elif task.category == "system" %}
+                                        <span class="badge bg-dark me-1"><i class="fas fa-cog me-1"></i>System</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary me-1">{{ task.category|title }}</span>
+                                    {% endif %}
+                                {% endif %}
+
+                                <!-- Status Badge -->
+                                {% if task.status == "STARTED" %}
+                                    <span class="badge bg-info"><i class="fas fa-spinner fa-spin me-1"></i>Running</span>
+                                {% elif task.status == "PROGRESS" %}
+                                    <span class="badge bg-info"><i class="fas fa-spinner fa-spin me-1"></i>In Progress</span>
+                                {% elif task.status == "PENDING" %}
+                                    <span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Pending</span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Progress Bar for tasks with progress -->
+                            {% if task.status in "STARTED,PROGRESS" and task.progress %}
+                            <div class="progress mb-2" style="height: 20px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                     role="progressbar" style="width: {{ task.progress }}%">{{ task.progress }}%</div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Items count if applicable -->
+                            {% if task.total_items and task.total_items > 0 %}
+                            <small class="text-muted">
+                                <i class="fas fa-list me-1"></i>Items: {{ task.processed_items|default:0 }} / {{ task.total_items }}
+                                {% if task.successful_items or task.failed_items %}
+                                    (<span class="text-success">{{ task.successful_items|default:0 }} ok</span> /
+                                     <span class="text-danger">{{ task.failed_items|default:0 }} failed</span>)
+                                {% endif %}
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-end ms-3">
+                            <small class="text-muted d-block">{{ task.start_time|date:"Y-m-d H:i" }}</small>
+                            <small class="text-muted">{{ task.user }}</small>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Filter Form -->
     <div class="card mb-4">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
@@ -84,16 +176,49 @@
     </div>
     
     <!-- Task Types Info -->
-    <div class="mt-4 alert alert-info">
-        <h5><i class="fas fa-info-circle"></i> Task Status Information</h5>
-        <ul class="mb-0">
-            <li><strong>Pending</strong> - Task has been created but not yet started</li>
-            <li><strong>Started</strong> - Task is currently running</li>
-            <li><strong>Progress</strong> - Task is running with reported progress</li>
-            <li><strong>Success</strong> - Task completed successfully</li>
-            <li><strong>Failure</strong> - Task failed to complete</li>
-            <li><strong>Cancelled</strong> - Task was manually cancelled</li>
-        </ul>
+    <div class="row mt-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Task Status Information</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>Pending</strong> - Task has been created but not yet started</li>
+                        <li><strong>Started</strong> - Task is currently running</li>
+                        <li><strong>Progress</strong> - Task is running with reported progress</li>
+                        <li><strong>Success</strong> - Task completed successfully</li>
+                        <li><strong>Failure</strong> - Task failed to complete</li>
+                        <li><strong>Cancelled</strong> - Task was manually cancelled</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Task Types & Categories</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Task Types:</strong></p>
+                    <ul class="mb-3">
+                        <li><span class="badge bg-secondary"><i class="fas fa-bolt me-1"></i>Instant</span> - Immediate operations (CRUD actions)</li>
+                        <li><span class="badge bg-primary"><i class="fas fa-cog me-1"></i>Background</span> - Long-running Celery tasks</li>
+                        <li><span class="badge bg-info"><i class="fas fa-stream me-1"></i>Workflow</span> - Multi-step review workflows</li>
+                    </ul>
+                    <p class="mb-2"><strong>Categories:</strong></p>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span class="badge bg-success"><i class="fas fa-plus me-1"></i>Create</span>
+                        <span class="badge bg-warning text-dark"><i class="fas fa-edit me-1"></i>Update</span>
+                        <span class="badge bg-danger"><i class="fas fa-trash me-1"></i>Delete</span>
+                        <span class="badge bg-info"><i class="fas fa-download me-1"></i>Import</span>
+                        <span class="badge bg-info"><i class="fas fa-upload me-1"></i>Export</span>
+                        <span class="badge bg-primary"><i class="fas fa-robot me-1"></i>AI Processing</span>
+                        <span class="badge bg-secondary"><i class="fas fa-sparkles me-1"></i>Enrichment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 {% endblock %}

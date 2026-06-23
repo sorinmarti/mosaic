@@ -1,62 +1,199 @@
 {% extends 'twf/base/base.html' %}
-{% load crispy_forms_tags %}
+{% load twf_filters %}
 {% load nav_tags %}
 
 {% block content %}
-    <p class="lead">Review Page Metadata</p>
-    <div class="row">
-        <div class="col-6">
-            {% crispy form %}
+    {% if has_active_workflow %}
+        <div class="row">
+            <div class="col-12">
+                {% url 'twf:end_metadata_page_review_workflow' as end_url %}
+                {% include 'twf/includes/workflow_progress_card.html' with workflow=workflow workflow_definition=workflow_definition end_workflow_url=end_url %}
+            </div>
         </div>
-        <div class="col-6">
-            <img src="{{ page.parsed_data.file.imgUrl }}" class="img-fluid" alt="Page image">
-            {{ page.document.document_id }}, {{ page.tk_page_number }}
+
+        {% if page %}
+            <!-- Main Content Area -->
+            <div class="row mb-4">
+                <!-- Left Column: Page Information & Review Form -->
+                <div class="col-md-8">
+                    <!-- Page Information -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>Page Information</strong>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Page ID:</dt>
+                                <dd class="col-sm-9">{{ page.id }}</dd>
+
+                                <dt class="col-sm-3">Document:</dt>
+                                <dd class="col-sm-9">{{ document.title }}</dd>
+
+                                <dt class="col-sm-3">Page Number:</dt>
+                                <dd class="col-sm-9">{{ page.tk_page_number }}</dd>
+
+                                <dt class="col-sm-3">Transkribus:</dt>
+                                <dd class="col-sm-9">
+                                    <a href="{{ page.get_transkribus_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fa fa-external-link"></i> View in Transkribus
+                                    </a>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Review Form -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>Metadata Fields</strong>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" id="review-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="page_id" value="{{ page.id }}">
+
+                                <!-- Metadata Fields -->
+                                {% if field_config %}
+                                    <div class="mb-3">
+                                        {% for field_key, config in field_config.items %}
+                                            {% if config.include %}
+                                                <div class="mb-3">
+                                                    <label for="id_field_{{ field_key|cut:'.' }}" class="form-label">
+                                                        <strong>{{ config.label }}</strong>
+                                                    </label>
+
+                                                    {% if config.type == 'textarea' %}
+                                                        <textarea name="field_{{ field_key|cut:'.' }}"
+                                                                  id="id_field_{{ field_key|cut:'.' }}"
+                                                                  class="form-control"
+                                                                  rows="3">{{ field_values|get_item:field_key|default:"" }}</textarea>
+                                                    {% elif config.type == 'number' %}
+                                                        <input type="number"
+                                                               name="field_{{ field_key|cut:'.' }}"
+                                                               id="id_field_{{ field_key|cut:'.' }}"
+                                                               class="form-control"
+                                                               value="{{ field_values|get_item:field_key|default:"" }}">
+                                                    {% elif config.type == 'date' %}
+                                                        <input type="date"
+                                                               name="field_{{ field_key|cut:'.' }}"
+                                                               id="id_field_{{ field_key|cut:'.' }}"
+                                                               class="form-control"
+                                                               value="{{ field_values|get_item:field_key|default:"" }}">
+                                                    {% else %}
+                                                        <input type="text"
+                                                               name="field_{{ field_key|cut:'.' }}"
+                                                               id="id_field_{{ field_key|cut:'.' }}"
+                                                               class="form-control"
+                                                               value="{{ field_values|get_item:field_key|default:"" }}">
+                                                    {% endif %}
+                                                    <small class="form-text text-muted">Key: <code>{{ field_key }}</code></small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="fa fa-exclamation-triangle"></i> No metadata fields configured for review.
+                                        <a href="{% url 'twf:metadata_settings' %}">Configure metadata review settings</a>
+                                    </div>
+                                {% endif %}
+
+                                <hr>
+
+                                <!-- Action Buttons -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button type="submit" class="btn btn-success w-100" name="action" value="save_and_next">
+                                            <i class="fa fa-check"></i> Save & Next
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="submit" class="btn btn-secondary w-100" name="action" value="skip">
+                                            <i class="fa fa-forward"></i> Skip
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Page Image & Raw Metadata -->
+                <div class="col-md-4">
+                    {% if page.get_image_url %}
+                        <div class="card mb-3">
+                            <div class="card-header bg-info text-white">
+                                <i class="fa fa-image"></i> <strong>Page Image</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <img src="{{ page.get_image_url }}"
+                                     class="img-fluid w-100"
+                                     alt="Page {{ page.tk_page_number }}"
+                                     onclick="window.open('{{ page.get_image_url }}', '_blank')"
+                                     style="cursor: pointer;">
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="card sticky-metadata">
+                        <div class="card-header bg-info text-white">
+                            <i class="fa fa-code"></i> <strong>Raw Metadata</strong>
+                        </div>
+                        <div class="card-body">
+                            <pre class="small" style="max-height: 300px; overflow-y: auto;">{{ metadata|pretty_json }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <h4>All pages have been reviewed!</h4>
+                <p>You have completed reviewing all pages in this workflow batch.</p>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Start Page Metadata Review Workflow</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">Review and edit metadata fields for pages in your project. <strong>{{ available_items_count }}</strong> pages with metadata available.</p>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="start_workflow">
+
+                            <div class="mb-3">
+                                <label for="batch_size" class="form-label">Batch Size:</label>
+                                <input type="number"
+                                       name="batch_size"
+                                       id="batch_size"
+                                       class="form-control"
+                                       value="10"
+                                       min="1"
+                                       max="100"
+                                       style="width: 200px;">
+                            </div>
+
+                            <button type="submit" class="btn btn-dark">
+                                <i class="fa fa-play"></i> Start Workflow
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-12">
-            Raw data:<br/> <code>{{ page.metadata|pretty_json }}</code>
-        </div>
-    </div>
+    {% endif %}
 {% endblock %}
 
-{% block script %}
-    <script>
-        $(document).ready(function() {
-            $('#review-form input').on('input', function() {
-                var inputField = $(this);
-                var fieldName = inputField.attr('name');
-                var fieldValue = inputField.val();
-                
-                // Make an AJAX call to validate the field
-                $.ajax({
-                    url: '/validate_page_field/',  // Define your validation URL
-                    method: 'POST',
-                    data: {
-                        field_name: fieldName,
-                        field_value: fieldValue,
-                        csrfmiddlewaretoken: '{{ csrf_token }}'
-                    },
-                    success: function(response) {
-                        var feedback = $('#' + fieldName + '-feedback');
-                        if (response.is_valid) {
-                            feedback.html('<span class="text-success">&#10004;</span>'); // Tick
-                        } else {
-                            feedback.html('<span class="text-danger">&#10008;</span>'); // Cross
-                        }
-                    }
-                });
-            });
-        });
-        
-        $('#review-form input').each(function() {
-            let inputField = $(this);
-            let feedback = $('#' + inputField.attr('name') + '-feedback');
-            if (inputField.hasClass('is-invalid')) {
-                feedback.html('<span class="text-danger">&#10008;</span>'); // Cross
-            } else if (inputField.val()) {
-                feedback.html('<span class="text-success">&#10004;</span>'); // Tick
-            }
-        });
-    </script>
+{% block css %}
+<style>
+    .sticky-metadata {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+    }
+</style>
 {% endblock %}

@@ -2,5 +2,12 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-   {% crispy form %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Edit Note</h5>
+        </div>
+        <div class="card-body">
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}

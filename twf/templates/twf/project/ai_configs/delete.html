@@ -1,0 +1,62 @@
+{% extends 'twf/base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Delete AI Configuration</h2>
+        <a href="{% url 'twf:project_ai_config_detail' ai_config.pk %}" class="btn btn-outline-secondary">
+            <i class="fa fa-arrow-left"></i> Back to Details
+        </a>
+    </div>
+
+    <div class="alert alert-danger">
+        <h4><i class="fa fa-exclamation-triangle"></i> Warning</h4>
+        <p>
+            You are about to delete the AI configuration <strong>{{ ai_config.name }}</strong>.
+            This action cannot be undone.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Configuration Details</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Name:</dt>
+                <dd class="col-sm-9">{{ ai_config.name }}</dd>
+
+                <dt class="col-sm-3">Provider:</dt>
+                <dd class="col-sm-9">{{ ai_config.get_provider_display }}</dd>
+
+                <dt class="col-sm-3">Model:</dt>
+                <dd class="col-sm-9"><code>{{ ai_config.model }}</code></dd>
+
+                <dt class="col-sm-3">Usage Count:</dt>
+                <dd class="col-sm-9">{{ ai_config.usage_count }} time{{ ai_config.usage_count|pluralize }}</dd>
+            </dl>
+
+            {% if ai_config.usage_count > 0 %}
+            <div class="alert alert-warning">
+                <i class="fa fa-info-circle"></i>
+                This configuration has been used {{ ai_config.usage_count }} time{{ ai_config.usage_count|pluralize }}.
+                Deleting it will not affect previously generated results, but it will no longer be available for future use.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">
+                <i class="fa fa-trash"></i> Yes, Delete This Configuration
+            </button>
+            <a href="{% url 'twf:project_ai_config_detail' ai_config.pk %}" class="btn btn-secondary">
+                <i class="fa fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

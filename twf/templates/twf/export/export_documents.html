@@ -2,6 +2,13 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Export documents from your project.</p>
-    {% crispy form %}
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Run Export Configuration</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Select an export configuration to run and generate your project export.</p>
+            {% crispy form %}
+        </div>
+    </div>
 {% endblock %}

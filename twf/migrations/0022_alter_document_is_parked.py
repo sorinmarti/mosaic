@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0021_document_is_parked_document_workflow_remarks'),
+        ("twf", "0021_document_is_parked_document_workflow_remarks"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='document',
-            name='is_parked',
+            model_name="document",
+            name="is_parked",
             field=models.BooleanField(blank=True, default=False),
         ),
     ]

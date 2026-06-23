@@ -1,0 +1,91 @@
+{% extends 'twf/base/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{% if is_create %}Create{% else %}Edit{% endif %} AI Configuration</h2>
+        <a href="{% url 'twf:project_ai_configs' %}" class="btn btn-outline-secondary">
+            <i class="fa fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">{% if is_create %}Create{% else %}Edit{% endif %} Configuration</h5>
+        </div>
+        <div class="card-body">
+            {% crispy form %}
+
+            <div class="mt-4">
+                <h5>Common Model Examples</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>OpenAI</h6>
+                        <ul class="list-unstyled">
+                            <li><code>gpt-4</code></li>
+                            <li><code>gpt-4-turbo</code></li>
+                            <li><code>gpt-3.5-turbo</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Anthropic (Claude)</h6>
+                        <ul class="list-unstyled">
+                            <li><code>claude-3-opus-20240229</code></li>
+                            <li><code>claude-3-sonnet-20240229</code></li>
+                            <li><code>claude-3-haiku-20240307</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Google (Gemini)</h6>
+                        <ul class="list-unstyled">
+                            <li><code>gemini-pro</code></li>
+                            <li><code>gemini-1.5-pro</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 alert alert-info">
+                <h6>Prompt Template Placeholders</h6>
+                <p>Use these common placeholders in your prompt template:</p>
+                <ul>
+                    <li><code>{document_text}</code> - Full text of a document</li>
+                    <li><code>{page_text}</code> - Text from a single page</li>
+                    <li><code>{tag_variation}</code> - A tag variation to analyze</li>
+                    <li><code>{collection_item_text}</code> - Text from a collection item</li>
+                    <li><code>{metadata}</code> - Metadata in JSON format</li>
+                </ul>
+                <p class="mb-0">
+                    <strong>Example:</strong>
+                    <code>Analyze the following document and extract key dates: {document_text}</code>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/hide API key on toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const apiKeyInput = document.querySelector('input[name="api_key"]');
+        if (apiKeyInput) {
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+            toggleBtn.textContent = 'Show API Key';
+            toggleBtn.onclick = function() {
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    toggleBtn.textContent = 'Hide API Key';
+                } else {
+                    apiKeyInput.type = 'password';
+                    toggleBtn.textContent = 'Show API Key';
+                }
+            };
+            apiKeyInput.parentNode.appendChild(toggleBtn);
+        }
+    });
+</script>
+{% endblock %}

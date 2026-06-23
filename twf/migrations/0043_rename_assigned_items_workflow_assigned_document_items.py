@@ -6,13 +6,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0042_document_status'),
+        ("twf", "0042_document_status"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='workflow',
-            old_name='assigned_items',
-            new_name='assigned_document_items',
+            model_name="workflow",
+            old_name="assigned_items",
+            new_name="assigned_document_items",
         ),
     ]

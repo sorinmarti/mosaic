@@ -2,22 +2,25 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <div class="border rounded bg-light mt-0 p-3">
-        <p class="lead">This page enables you to extract data downloaded from
-            Transkribus and create corresponding database objects.</p>
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Extract Transkribus Data</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">This page enables you to extract data downloaded from Transkribus and create corresponding database objects.</p>
 
-        {% if not project.job_download_url %}
-            <div class="alert alert-warning" role="alert">
-                <h4 class="alert-heading">There is no export</h4>
-                <p>
-                    You need to request an export and download it first.
-                    Please go to the <a href="{% url 'twf:project_tk_export' %}">TK Export</a> page and
-                    start an export.
-                </p>
-            </div>
-        {% endif %}
+            {% if not project.job_download_url %}
+                <div class="alert alert-warning" role="alert">
+                    <h4 class="alert-heading">There is no export</h4>
+                    <p class="mb-0">
+                        You need to request an export and download it first.
+                        Please go to the <a href="{% url 'twf:project_tk_export' %}">TK Export</a> page and
+                        start an export.
+                    </p>
+                </div>
+            {% endif %}
 
-        {% crispy form %}
-
+            {% crispy form %}
+        </div>
     </div>
 {% endblock %}

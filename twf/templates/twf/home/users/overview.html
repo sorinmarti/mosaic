@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block content %}
+<p class="lead">View your profile information, projects, and permissions.</p>
+
 <div class="container-fluid mt-4">
     <!-- User Header -->
     <div class="row mb-4">
@@ -17,6 +19,12 @@
                         {% else %}
                             <span class="badge bg-info me-2">User</span>
                         {% endif %}
+                        <a href="{% url 'twf:user_profile' %}" class="btn btn-sm btn-light me-2">
+                            <i class="fas fa-edit me-1"></i>Edit Profile
+                        </a>
+                        <a href="{% url 'twf:user_change_password' %}" class="btn btn-sm btn-light">
+                            <i class="fas fa-key me-1"></i>Change Password
+                        </a>
                     </div>
                 </div>
                 <div class="card-body">

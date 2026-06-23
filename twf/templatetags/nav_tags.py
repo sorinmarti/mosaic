@@ -1,4 +1,5 @@
 """Custom template tags for the twf app."""
+
 import hashlib
 import json
 
@@ -7,9 +8,8 @@ from django import template
 from django.utils.html import conditional_escape
 from django.utils.safestring import mark_safe
 
-from twf.permissions import check_permission
-
 register = template.Library()
+
 
 @register.simple_tag
 def value_to_color(value):
@@ -33,7 +33,7 @@ def any_value_to_color(value):
     """Converts a numerical value to a color"""
     hash_object = hashlib.md5(str(value).encode())
     hex_hash = hash_object.hexdigest()
-    color_code = '#' + hex_hash[:6]
+    color_code = "#" + hex_hash[:6]
     return color_code
 
 
@@ -43,28 +43,28 @@ def limit_to(value, arg):
     return value[:arg]
 
 
-@register.filter(name='markdown')
+@register.filter(name="markdown")
 def markdown_format(text):
     """Converts markdown text to HTML."""
-    modified_text = text.replace('\n', '\n\n')
-    return mark_safe(md.markdown(modified_text, extensions=['extra', 'smarty']))
+    modified_text = text.replace("\n", "\n\n")
+    return mark_safe(md.markdown(modified_text, extensions=["extra", "smarty"]))
 
 
-@register.filter(name='nl2br')
+@register.filter(name="nl2br")
 def nl2br(value):
     """Converts newlines into <br> tags."""
     escaped_value = conditional_escape(value)
-    return mark_safe(escaped_value.replace('\n', '<br>'))
+    return mark_safe(escaped_value.replace("\n", "<br>"))
 
 
-@register.filter(name='sp2nbsp')
+@register.filter(name="sp2nbsp")
 def sp2nbsp(value):
     """Converts spaces into non-breaking spaces."""
     escaped_value = conditional_escape(value)
-    return mark_safe(escaped_value.replace(' ', '&nbsp;'))
+    return mark_safe(escaped_value.replace(" ", "&nbsp;"))
 
 
-@register.filter(name='pretty_json')
+@register.filter(name="pretty_json")
 def pretty_json(value):
     """Pretty-formats a json value."""
     try:
@@ -78,7 +78,7 @@ def pretty_json(value):
         return value
 
 
-@register.filter(name='type_check')
+@register.filter(name="type_check")
 def type_check(value):
     """Returns the type of the value."""
     return type(value).__name__

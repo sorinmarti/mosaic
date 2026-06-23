@@ -1,5 +1,66 @@
 {% extends 'twf/base/base.html' %}
+{% load twf_filters %}
 
 {% block content %}
-    {% include 'twf/metadata/info_card_metadata.html' %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> Document Metadata Blocks</h5>
+                </div>
+                <div class="card-body">
+                    {% if doc_keys %}
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Metadata Key</th>
+                                    <th class="text-end">Documents</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in doc_keys %}
+                                    <tr>
+                                        <td><code>{{ key }}</code></td>
+                                        <td class="text-end">{{ doc_key_counts|get_item:key }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted mb-0">No metadata blocks found in documents.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-file"></i> Page Metadata Blocks</h5>
+                </div>
+                <div class="card-body">
+                    {% if page_keys %}
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Metadata Key</th>
+                                    <th class="text-end">Pages</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in page_keys %}
+                                    <tr>
+                                        <td><code>{{ key }}</code></td>
+                                        <td class="text-end">{{ page_key_counts|get_item:key }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted mb-0">No metadata blocks found in pages.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

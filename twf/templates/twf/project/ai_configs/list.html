@@ -1,0 +1,100 @@
+{% extends 'twf/base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>AI Configurations</h2>
+        <a href="{% url 'twf:project_ai_config_create' %}" class="btn btn-primary">
+            <i class="fa fa-plus"></i> Create New Configuration
+        </a>
+    </div>
+
+    {% if ai_configs %}
+    <div class="row">
+        {% for config in ai_configs %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 {% if not config.is_active %}border-secondary{% endif %}">
+                <div class="card-header {% if config.is_active %}bg-primary text-white{% else %}bg-secondary text-white{% endif %}">
+                    <h5 class="mb-0">
+                        {{ config.name }}
+                        {% if not config.is_active %}
+                        <span class="badge bg-warning text-dark float-end">Inactive</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if config.description %}
+                    <p class="card-text">{{ config.description|truncatewords:20 }}</p>
+                    {% else %}
+                    <p class="card-text text-muted">No description provided.</p>
+                    {% endif %}
+                    <hr>
+                    <p class="mb-1">
+                        <strong>Provider:</strong>
+                        <span class="badge bg-info">{{ config.get_provider_display }}</span>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Model:</strong>
+                        <code>{{ config.model }}</code>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Usage:</strong> {{ config.usage_count }} time{{ config.usage_count|pluralize }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Temperature:</strong> {{ config.temperature|default:"0.5" }}
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'twf:project_ai_config_detail' config.pk %}"
+                           class="btn btn-sm btn-outline-primary"
+                           title="View Details">
+                            <i class="fa fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'twf:project_ai_config_edit' config.pk %}"
+                           class="btn btn-sm btn-outline-secondary"
+                           title="Edit Configuration">
+                            <i class="fa fa-edit"></i> Edit
+                        </a>
+                        <a href="{% url 'twf:project_ai_config_test' config.pk %}"
+                           class="btn btn-sm btn-outline-success"
+                           title="Test Configuration">
+                            <i class="fa fa-flask"></i> Test
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle"></i> No AI configurations yet.
+        <a href="{% url 'twf:project_ai_config_create' %}">Create your first one</a> to get started.
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">What are AI Configurations?</h5>
+        </div>
+        <div class="card-body">
+            <p>
+                AI Configurations bundle everything needed to make an AI call:
+            </p>
+            <ul>
+                <li><strong>Provider & Model:</strong> Choose from OpenAI, Claude, Gemini, and more</li>
+                <li><strong>Credentials:</strong> Store API keys securely with each configuration</li>
+                <li><strong>Prompt Template:</strong> Define reusable prompts with placeholders</li>
+                <li><strong>System Role:</strong> Set the AI's behavior and personality</li>
+                <li><strong>Execution Settings:</strong> Control temperature, tokens, and other parameters</li>
+            </ul>
+            <p>
+                Once created, configurations can be selected in workflows for document analysis,
+                tag enrichment, collection processing, and more.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

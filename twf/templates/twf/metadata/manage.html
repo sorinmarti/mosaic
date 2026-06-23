@@ -1,0 +1,137 @@
+{% extends 'twf/base/base.html' %}
+{% load crispy_forms_tags %}
+{% load twf_filters %}
+
+{% block content %}
+    <p class="lead">View and delete metadata blocks from documents and pages.</p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-file-alt"></i> Document Metadata Blocks</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if doc_keys %}
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Metadata Key</th>
+                                        <th class="text-end">Documents</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key in doc_keys %}
+                                        <tr>
+                                            <td><code>{{ key }}</code></td>
+                                            <td class="text-end">{{ doc_key_counts|get_item:key }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p class="text-muted">No metadata blocks found in documents.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-file"></i> Page Metadata Blocks</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if page_keys %}
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Metadata Key</th>
+                                        <th class="text-end">Pages</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key in page_keys %}
+                                        <tr>
+                                            <td><code>{{ key }}</code></td>
+                                            <td class="text-end">{{ page_key_counts|get_item:key }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p class="text-muted">No metadata blocks found in pages.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5><i class="fas fa-trash-alt"></i> Delete Metadata Block</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Deleting a metadata block will permanently remove it from ALL documents or pages in this project. This action cannot be undone.
+                        </div>
+                        {% crispy form %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{ doc_keys|json_script:"doc-keys-data" }}
+    {{ page_keys|json_script:"page-keys-data" }}
+
+    <script>
+        // Update metadata key choices when target type changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const targetTypeField = document.getElementById('id_target_type');
+            const metadataKeyField = document.getElementById('id_metadata_key');
+
+            if (targetTypeField && metadataKeyField) {
+                const docKeys = JSON.parse(document.getElementById('doc-keys-data').textContent);
+                const pageKeys = JSON.parse(document.getElementById('page-keys-data').textContent);
+
+                targetTypeField.addEventListener('change', function() {
+                    const targetType = this.value;
+                    const currentKey = metadataKeyField.value;
+
+                    // Clear and repopulate metadata key dropdown
+                    metadataKeyField.innerHTML = '';
+
+                    let keys = [];
+                    if (targetType === 'document') {
+                        keys = docKeys;
+                    } else {
+                        keys = pageKeys;
+                    }
+
+                    if (keys.length > 0) {
+                        keys.forEach(function(key) {
+                            const option = document.createElement('option');
+                            option.value = key;
+                            option.textContent = key;
+                            if (key === currentKey) {
+                                option.selected = true;
+                            }
+                            metadataKeyField.appendChild(option);
+                        });
+                        metadataKeyField.disabled = false;
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No metadata blocks found';
+                        metadataKeyField.appendChild(option);
+                        metadataKeyField.disabled = true;
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

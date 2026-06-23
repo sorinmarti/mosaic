@@ -6,28 +6,50 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0050_alter_project_title'),
+        ("twf", "0050_alter_project_title"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='keywords',
-            field=models.JSONField(blank=True, default=list, help_text='Keywords for the project. These can be used for data exports.', verbose_name='Keywords'),
+            model_name="project",
+            name="keywords",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Keywords for the project. These can be used for data exports.",
+                verbose_name="Keywords",
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='license',
-            field=models.CharField(blank=True, default='CC BY 4.0', help_text='The license of the project. This can be used for data exports.', max_length=255, verbose_name='License'),
+            model_name="project",
+            name="license",
+            field=models.CharField(
+                blank=True,
+                default="CC BY 4.0",
+                help_text="The license of the project. This can be used for data exports.",
+                max_length=255,
+                verbose_name="License",
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='version',
-            field=models.CharField(blank=True, default='1.0', help_text='The version of the project. This can be used for data exports.', max_length=255, verbose_name='Version'),
+            model_name="project",
+            name="version",
+            field=models.CharField(
+                blank=True,
+                default="1.0",
+                help_text="The version of the project. This can be used for data exports.",
+                max_length=255,
+                verbose_name="Version",
+            ),
         ),
         migrations.AddField(
-            model_name='project',
-            name='workflow_description',
-            field=models.TextField(blank=True, default='', help_text='The description of the workflow for this project.You can use Markdown to format the text.', verbose_name='Workflow Description'),
+            model_name="project",
+            name="workflow_description",
+            field=models.TextField(
+                blank=True,
+                default="",
+                help_text="The description of the workflow for this project.You can use Markdown to format the text.",
+                verbose_name="Workflow Description",
+            ),
         ),
     ]

@@ -2,69 +2,185 @@
 {% load nav_tags %}
 
 {% block content %}
-     {% include 'twf/dictionaries/info_card_dictionaries.html' %}
+    <ul class="nav nav-tabs mb-4" id="dictOverviewTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="state-tab" data-bs-toggle="tab"
+                    data-bs-target="#tab-state" type="button" role="tab"
+                    aria-controls="tab-state" aria-selected="true">
+                <i class="fas fa-chart-bar me-1"></i> Dictionary State
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="usage-tab" data-bs-toggle="tab"
+                    data-bs-target="#tab-usage" type="button" role="tab"
+                    aria-controls="tab-usage" aria-selected="false">
+                <i class="fas fa-link me-1"></i> Dictionary Usage
+            </button>
+        </li>
+    </ul>
 
-     {% for dtype, entries in dict_stats.top_entries_per_type.items %}
-        <div class="row">
-            <div class="col-8">
-                 <div class="table-responsive">
-                     <table class="table table-bordered table-striped table-hover">
-                        <thead>
+    <div class="tab-content" id="dictOverviewTabContent">
+
+        <!-- ── State Tab ── -->
+        <div class="tab-pane fade show active" id="tab-state" role="tabpanel" aria-labelledby="state-tab">
+            <p class="lead">Enrichment status per dictionary — how many entries have been normalised.</p>
+
+            {% if dict_state_stats %}
+                <div class="table-responsive">
+                    <table class="table table-borderless align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <th style="width: 70%">Dictionary Entries of Type {{ dtype }}</th>
-                                <th>used # times</th>
+                                <th>Dictionary</th>
+                                <th>Type</th>
+                                <th class="text-end">Total entries</th>
+                                <th>Enriched</th>
+                                <th>Reviewed</th>
+                                <th>Parked</th>
+                                <th>Unprocessed</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in entries %}
-                                <tr>
-                                    <td>{{ entry.dictionary_entry__label }}</td>
-                                    <td>{{ entry.count }}</td>
-                                </tr>
-                            {% endfor %}
+                        {% for row in dict_state_stats %}
+                            <tr>
+                                <td><strong>{{ row.dictionary.label }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ row.dictionary.type }}</span></td>
+                                <td class="text-end">{{ row.total }}</td>
+
+                                <!-- Enriched -->
+                                <td style="min-width: 160px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 18px;">
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                 style="width: {{ row.enriched_pct }}%;"
+                                                 title="{{ row.enriched }} enriched">
+                                                {% if row.enriched_pct >= 10 %}{{ row.enriched_pct }}%{% endif %}
+                                            </div>
+                                        </div>
+                                        <small class="text-nowrap text-muted">{{ row.enriched }} ({{ row.enriched_pct }}%)</small>
+                                    </div>
+                                </td>
+
+                                <!-- Reviewed -->
+                                <td style="min-width: 160px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 18px;">
+                                            <div class="progress-bar bg-primary" role="progressbar"
+                                                 style="width: {{ row.reviewed_pct }}%;"
+                                                 title="{{ row.reviewed }} reviewed">
+                                                {% if row.reviewed_pct >= 10 %}{{ row.reviewed_pct }}%{% endif %}
+                                            </div>
+                                        </div>
+                                        <small class="text-nowrap text-muted">{{ row.reviewed }} ({{ row.reviewed_pct }}%)</small>
+                                    </div>
+                                </td>
+
+                                <!-- Parked -->
+                                <td style="min-width: 140px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 18px;">
+                                            <div class="progress-bar bg-warning" role="progressbar"
+                                                 style="width: {{ row.parked_pct }}%;"
+                                                 title="{{ row.parked }} parked">
+                                                {% if row.parked_pct >= 10 %}{{ row.parked_pct }}%{% endif %}
+                                            </div>
+                                        </div>
+                                        <small class="text-nowrap text-muted">{{ row.parked }} ({{ row.parked_pct }}%)</small>
+                                    </div>
+                                </td>
+
+                                <!-- Unprocessed -->
+                                <td style="min-width: 140px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 18px;">
+                                            <div class="progress-bar bg-danger" role="progressbar"
+                                                 style="width: {{ row.unprocessed_pct }}%;"
+                                                 title="{{ row.unprocessed }} unprocessed">
+                                                {% if row.unprocessed_pct >= 10 %}{{ row.unprocessed_pct }}%{% endif %}
+                                            </div>
+                                        </div>
+                                        <small class="text-nowrap text-muted">{{ row.unprocessed }} ({{ row.unprocessed_pct }}%)</small>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
                         </tbody>
-                     </table>
-                 </div>
-            </div>
-            <div class="col-4">
-                {% if dtype %}
-                    <canvas id="myPieChart-{{ dtype }}" width="400" height="400"></canvas>
-                    <script>
-                        var ctx = document.getElementById('myPieChart-{{ dtype }}').getContext('2d');
-                        var myPieChart = new Chart(ctx, {
-                            type: 'bar',
-                            data: {
-                                labels: [{% for entry in entries|limit_to:10 %}'{{ entry.dictionary_entry__label }}',{% endfor %}],
-                                datasets: [{
-                                    data: [{% for entry in entries|limit_to:10 %}{{ entry.count }},{% endfor %}],
-                                    backgroundColor: [{% for entry in entries %}'{% any_value_to_color entry.count %}',{% endfor %}],
-                                    borderColor: [{% for entry in entries|limit_to:10 %}'black',{% endfor %}]
-                                }]
-                            },
-                            options: {
-                                plugins: {
-                                    title: {
-                                        display: true,
-                                        text: '{{dtype|title}}',
-                                        font: {
-                                            size: 18
-                                        },
-                                        padding: {
-                                            top: 10,
-                                            bottom: 10
-                                        },
-                                        color: '#111'  // You can set the color of the title text if you like
-                                    },
-                                    legend: {
-                                        display: false
-                                    }
-                                },
-                                responsive: true
-                            }
-                        });
-                    </script>
-                {% endif %}
-            </div>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    No dictionaries are connected to this project yet.
+                    <a href="{% url 'twf:dictionaries_add' %}">Add dictionaries</a> to get started.
+                </div>
+            {% endif %}
         </div>
-     {% endfor %}
+
+        <!-- ── Usage Tab ── -->
+        <div class="tab-pane fade" id="tab-usage" role="tabpanel" aria-labelledby="usage-tab">
+            <p class="lead">How often dictionary entries are referenced by tags in this project.</p>
+
+            {% for dtype, entries in dict_stats.top_entries_per_type.items %}
+                <div class="row mb-4">
+                    <div class="col-8">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 70%">Dictionary Entries of Type {{ dtype }}</th>
+                                        <th>Used # times</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in entries %}
+                                        <tr>
+                                            <td>{{ entry.dictionary_entry__label }}</td>
+                                            <td>{{ entry.count }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        {% if dtype %}
+                            <canvas id="myPieChart-{{ dtype }}" width="400" height="400"></canvas>
+                            <script>
+                                var ctx = document.getElementById('myPieChart-{{ dtype }}').getContext('2d');
+                                var myPieChart = new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: [{% for entry in entries|limit_to:10 %}'{{ entry.dictionary_entry__label }}',{% endfor %}],
+                                        datasets: [{
+                                            data: [{% for entry in entries|limit_to:10 %}{{ entry.count }},{% endfor %}],
+                                            backgroundColor: [{% for entry in entries %}'{% any_value_to_color entry.count %}',{% endfor %}],
+                                            borderColor: [{% for entry in entries|limit_to:10 %}'black',{% endfor %}]
+                                        }]
+                                    },
+                                    options: {
+                                        plugins: {
+                                            title: {
+                                                display: true,
+                                                text: '{{dtype|title}}',
+                                                font: { size: 18 },
+                                                padding: { top: 10, bottom: 10 },
+                                                color: '#111'
+                                            },
+                                            legend: { display: false }
+                                        },
+                                        responsive: true
+                                    }
+                                });
+                            </script>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-1"></i>
+                    No dictionary entries have been assigned to tags in this project yet.
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
 {% endblock %}

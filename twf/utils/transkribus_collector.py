@@ -1,6 +1,6 @@
 """Module to interact with the Transkribus API."""
-import json
 
+import json
 import xmltodict
 import requests
 
@@ -8,8 +8,8 @@ import requests
 def get_session_id(username, password):
     """Get a session ID from the Transkribus API."""
 
-    url = 'https://transkribus.eu/TrpServer/rest/auth/login'
-    response = requests.post(url, data={'user': username, 'pw': password}, timeout=10)
+    url = "https://transkribus.eu/TrpServer/rest/auth/login"
+    response = requests.post(url, data={"user": username, "pw": password}, timeout=10)
 
     if response.status_code == 200:
         xml_response = xmltodict.parse(response.text)
@@ -26,9 +26,11 @@ def start_export(session_id, collection_id):
     api_url = "https://transkribus.eu/TrpServer/rest/"
     export_url = f"{api_url}collections/{collection_id}/export"
     params = {
-        'format': 'PAGE',
+        "format": "PAGE",
     }
-    response = requests.post(export_url, json=params, cookies={"JSESSIONID": session_id}, timeout=10)
+    response = requests.post(
+        export_url, json=params, cookies={"JSESSIONID": session_id}, timeout=10
+    )
 
     if response.status_code == 200:
         return response.text
@@ -41,9 +43,11 @@ def start_test_export(session_id, collection_id):
     api_url = "https://transkribus.eu/TrpServer/rest/"
     export_url = f"{api_url}collections/{collection_id}/export"
     params = {
-        'format': 'PAGE',
+        "format": "PAGE",
     }
-    response = requests.post(export_url, json=params, cookies={"JSESSIONID": session_id}, timeout=10)
+    response = requests.post(
+        export_url, json=params, cookies={"JSESSIONID": session_id}, timeout=10
+    )
 
     if response.status_code == 200:
         return response.text

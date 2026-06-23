@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0045_alter_collectionitem_options_and_more'),
+        ("twf", "0045_alter_collectionitem_options_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='userprofile',
-            name='clearance_level',
+            model_name="userprofile",
+            name="clearance_level",
         ),
     ]

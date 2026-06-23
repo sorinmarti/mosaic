@@ -6,13 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0041_collectionitem_is_reserved_and_more'),
+        ("twf", "0041_collectionitem_is_reserved_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='document',
-            name='status',
-            field=models.CharField(choices=[('open', 'Open'), ('needs_tk_work', 'Needs Correction on Transkribus'), ('irrelevant', 'Is Irrelevant'), ('reviewed', 'Reviewed')], default='open', max_length=20),
+            model_name="document",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("open", "Open"),
+                    ("needs_tk_work", "Needs Correction on Transkribus"),
+                    ("irrelevant", "Is Irrelevant"),
+                    ("reviewed", "Reviewed"),
+                ],
+                default="open",
+                max_length=20,
+            ),
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0063_remove_exportconfiguration_is_default_and_more'),
+        ("twf", "0063_remove_exportconfiguration_is_default_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='zenodo_deposition_id',
+            model_name="project",
+            name="zenodo_deposition_id",
             field=models.CharField(blank=True, max_length=128, null=True),
         ),
     ]

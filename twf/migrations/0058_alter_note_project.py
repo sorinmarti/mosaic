@@ -7,13 +7,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0057_remove_note_user_note_title'),
+        ("twf", "0057_remove_note_user_note_title"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='note',
-            name='project',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notes', to='twf.project'),
+            model_name="note",
+            name="project",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="notes",
+                to="twf.project",
+            ),
         ),
     ]

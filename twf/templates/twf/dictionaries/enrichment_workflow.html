@@ -1,0 +1,191 @@
+{% extends 'twf/base/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    {% if not has_active_workflow %}
+        {# Show workflow start form when no active workflow #}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="fa fa-hand-pointer"></i> Manual Enrichment</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Supervised workflow - enrich entries one at a time with full control.</p>
+                        <p class="text-muted small mb-0">Use this when you need precise control or entries require human judgment.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="fa fa-robot"></i> Batch Enrichment</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Automated workflows - enrich all entries in one batch operation.</p>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'twf:dictionaries_batch_gnd' %}" class="btn btn-sm btn-outline-dark">
+                                <i class="fa fa-book"></i> GND Batch
+                            </a>
+                            <a href="{% url 'twf:dictionaries_batch_wikidata' %}" class="btn btn-sm btn-outline-dark">
+                                <i class="fa fa-wikipedia-w"></i> Wikidata Batch
+                            </a>
+                            <a href="{% url 'twf:dictionaries_batch_geonames' %}" class="btn btn-sm btn-outline-dark">
+                                <i class="fa fa-map-marker"></i> GeoNames Batch
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Start Manual Enrichment Workflow</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Supervised workflow - enrich entries one at a time with full control.</p>
+                <form method="post" id="start-workflow-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="start_workflow" value="1">
+
+                    <div class="mb-3">
+                        <label for="dictionary_id" class="form-label">Dictionary</label>
+                        <select name="dictionary_id" id="dictionary_id" class="form-select" required>
+                            <option value="">Select a dictionary...</option>
+                            {% for dictionary in dictionaries %}
+                                <option value="{{ dictionary.id }}">{{ dictionary.label }} ({{ dictionary.type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="enrichment_type" class="form-label">Enrichment Type</label>
+                        <select name="enrichment_type" id="enrichment_type" class="form-select" required>
+                            <option value="">Select enrichment type...</option>
+                            {% for value, label in enrichment_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <strong>Verse:</strong> Bible verse references<br>
+                            <strong>Date:</strong> Dates in EDTF format<br>
+                            <strong>Authority ID:</strong> Generic external authority IDs<br>
+                            <strong>GND:</strong> German National Library authority IDs<br>
+                            <strong>Wikidata:</strong> Wikidata entity IDs<br>
+                            <strong>GeoNames:</strong> Geographic location IDs
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="batch_size" class="form-label">Batch Size</label>
+                        <input type="number" name="batch_size" id="batch_size" class="form-control"
+                               value="20" min="1" max="100" required>
+                        <div class="form-text">Number of entries to enrich in this workflow</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark">
+                        <i class="fa fa-play"></i> Start Workflow
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        // Dictionary enrichment type configurations
+        const dictionaryConfigs = {{ dictionary_configs_json|safe }};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dictionarySelect = document.getElementById('dictionary_id');
+            const enrichmentSelect = document.getElementById('enrichment_type');
+
+            // Store all enrichment options
+            const allOptions = Array.from(enrichmentSelect.querySelectorAll('option')).slice(1); // Skip first "Select..." option
+
+            function filterEnrichmentTypes() {
+                const selectedDictId = dictionarySelect.value;
+
+                if (!selectedDictId) {
+                    // No dictionary selected, show all options
+                    enrichmentSelect.innerHTML = '<option value="">Select enrichment type...</option>';
+                    allOptions.forEach(opt => enrichmentSelect.appendChild(opt.cloneNode(true)));
+                    enrichmentSelect.disabled = true;
+                    return;
+                }
+
+                // Get configured types for this dictionary
+                const configuredTypes = dictionaryConfigs[selectedDictId] || [];
+
+                // Filter options
+                enrichmentSelect.innerHTML = '<option value="">Select enrichment type...</option>';
+
+                if (configuredTypes.length === 0) {
+                    enrichmentSelect.innerHTML += '<option value="" disabled>No enrichment types configured for this dictionary type. Please configure in Dictionary Settings.</option>';
+                    enrichmentSelect.disabled = true;
+                } else {
+                    allOptions.forEach(opt => {
+                        if (configuredTypes.includes(opt.value)) {
+                            enrichmentSelect.appendChild(opt.cloneNode(true));
+                        }
+                    });
+                    enrichmentSelect.disabled = false;
+                }
+            }
+
+            // Listen for dictionary changes
+            dictionarySelect.addEventListener('change', filterEnrichmentTypes);
+
+            // Initialize on page load
+            filterEnrichmentTypes();
+        });
+        </script>
+    {% else %}
+        {# Show workflow interface when workflow is active #}
+        {% if workflow %}
+            {% url 'twf:end_dictionary_enrichment_workflow' as end_url %}
+            {% include 'twf/includes/workflow_progress_card.html' with workflow=workflow workflow_definition=workflow_definition end_workflow_url=end_url %}
+
+            <div class="alert alert-info mb-3">
+                <strong>Enrichment Type:</strong> <span class="badge bg-info">{{ enrichment_type }}</span>
+            </div>
+        {% endif %}
+
+        {% if has_next_entry %}
+            <div class="alert alert-light border mb-3">
+                <p class="mb-2"><strong>Dictionary Entry:</strong> <span class="badge bg-primary">{{ entry.label }}</span></p>
+                {% if entry.notes %}
+                    <p class="mb-2 small"><strong>Notes:</strong> {{ entry.notes }}</p>
+                {% endif %}
+                <p class="mb-0 small text-muted">
+                    <i class="fa fa-info-circle"></i>
+                    Fill in the normalized data and click "Save & Next" to continue.
+                </p>
+            </div>
+
+            {# Show usage examples #}
+            {% if entry.get_num_usages > 0 %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">
+                            <i class="fa fa-tags me-2"></i>Used {{ entry.get_num_usages }} time{{ entry.get_num_usages|pluralize }}
+                        </h6>
+                        <p class="card-text small text-muted mb-0">
+                            This entry appears in the documents. Enriching it will apply to all occurrences.
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="row">
+                <div class="col-12">
+                    {% crispy form %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> There are no more entries to enrich in this workflow.
+            </div>
+        {% endif %}
+    {% endif %} {# End has_active_workflow check #}
+{% endblock %}

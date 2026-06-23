@@ -1,9 +1,35 @@
 {% extends 'twf/base/base.html' %}
 {% load nav_tags %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-    {% include 'twf/tags/tag_types.html' %}
-    {%  if dictionary %}
+    <p class="lead">Group similar tag variations into dictionary entries for consistent data.</p>
+
+    {% if not has_active_workflow %}
+        {# Show workflow start form when no active workflow #}
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">Start Tag Grouping Workflow</h5>
+            </div>
+            <div class="card-body">
+                {% crispy workflow_start_form %}
+            </div>
+        </div>
+    {% else %}
+        {# Show workflow interface when workflow is active #}
+        {% if workflow %}
+            {% url 'twf:end_tag_grouping_workflow' as end_url %}
+            {% include 'twf/includes/workflow_progress_card.html' with workflow=workflow workflow_definition=workflow_definition end_workflow_url=end_url %}
+
+            {% if workflow_instructions %}
+                <div class="alert alert-info">
+                    <strong>Instructions:</strong>
+                    <div>{{ workflow_instructions|safe }}</div>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {%  if dictionary %}
         {% if tag %}
             <div class="my-3 p-3 border rounded" style="background-color: khaki">
                 <p class="text-center" style="color: #7c7c7c">Try to group:
@@ -145,6 +171,7 @@
             to an existing dictionary type in the <a href="{% url 'twf:project_settings_tasks' %}?tab=tag_types">Task Settings</a>.
         </div>
  {% endif %}
+    {% endif %} {# End has_active_workflow check #}
 {% endblock %}
 
 {% block script %}
