@@ -435,6 +435,20 @@ def start_enrich_entry_ai(request):
 
 ##############################
 ## DOCUMENT TASKS
+def start_build_cross_references(request):
+    """Trigger task to build document cross-references from tag additional_information."""
+    from twf.tasks.document_tasks import build_cross_references
+
+    reference_key = request.POST.get("reference_key")
+    storage_key = request.POST.get("storage_key") or "corpus_connections"
+    return trigger_task(
+        request,
+        build_cross_references,
+        reference_key=reference_key,
+        storage_key=storage_key,
+    )
+
+
 def start_documents_batch_unified(request):
     """
     Unified task trigger for document AI batch processing.

@@ -1,0 +1,34 @@
+{% extends 'twf/base/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Document Cross-References</h5>
+        </div>
+        <div class="card-body">
+            <p class="lead mb-3">
+                Build a directed reference network across documents in this project.
+                For each document, this task scans all tags for the selected
+                <strong>additional information key</strong> (e.g. <code>transkribus_doc_id</code>),
+                groups the mentions by target document, and writes a structured
+                <strong>connection block</strong> into the document metadata.
+            </p>
+            <ul class="text-muted small mb-0">
+                <li>Connections are <strong>directed</strong> (source → target) and <strong>weighted</strong> by mention count.</li>
+                <li>Target documents not found in this project are recorded with <code>in_corpus: false</code>.</li>
+                <li>Re-running the task <strong>replaces</strong> the existing connection block entirely.</li>
+                <li>Documents with no matching tags receive an empty connection block.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Configuration</h5>
+        </div>
+        <div class="card-body">
+            {% crispy form %}
+        </div>
+    </div>
+{% endblock %}

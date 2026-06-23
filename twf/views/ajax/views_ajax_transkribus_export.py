@@ -33,7 +33,7 @@ def ajax_transkribus_reset_export(request):
     project = Project.objects.get(pk=project_id)
     project.transkribus_job_id = None
     project.job_download_url = None
-    if os.path.isfile(project.downloaded_zip_file.path):
+    if project.downloaded_zip_file and os.path.isfile(project.downloaded_zip_file.path):
         os.remove(project.downloaded_zip_file.path)
     project.downloaded_zip_file = None
     project.save(current_user=request.user)

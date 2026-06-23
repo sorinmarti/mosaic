@@ -136,6 +136,49 @@
         </div>
     {% endif %}
 
+    {# Positional Data from simple-alto-parser #}
+    {% if tag.line_index_global or tag.offset_in_line or tag.length %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-map-pin"></i> Positional Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Region Index</dt>
+                    <dd class="col-sm-9">{{ tag.region_index }}</dd>
+
+                    <dt class="col-sm-3">Line in Region</dt>
+                    <dd class="col-sm-9">{{ tag.line_index_in_region }}</dd>
+
+                    <dt class="col-sm-3">Global Line Index</dt>
+                    <dd class="col-sm-9">{{ tag.line_index_global }}</dd>
+
+                    <dt class="col-sm-3">Offset in Line</dt>
+                    <dd class="col-sm-9">{{ tag.offset_in_line }}</dd>
+
+                    <dt class="col-sm-3">Length</dt>
+                    <dd class="col-sm-9">{{ tag.length }}</dd>
+                </dl>
+            </div>
+        </div>
+    {% endif %}
+
+    {# Additional Information (legacy field) #}
+    {% if tag.additional_information %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-info-circle"></i> Additional Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <pre class="mb-0" style="font-size:0.85em;">{{ tag.additional_information|pprint_json }}</pre>
+            </div>
+        </div>
+    {% endif %}
+
     {# Enrichment Data #}
     {% if tag.enrichment %}
         {# New enrichment format (JSONField) #}

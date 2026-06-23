@@ -310,6 +310,14 @@ def extract_tags_from_parsed_data(parsed_data):
                 # Calculate global line index
                 line_index_global = global_line_counter + line_index_in_region
 
+                # Collect any extra fields (e.g. transkribus_doc_id for inter-corpus links)
+                known_keys = {
+                    "type", "text", "offset", "length", "continued",
+                    "line_index", "line_text", "starts_tag", "ends_tag",
+                    "continues_tag", "line_length",
+                }
+                extra = {k: v for k, v in tag_data.items() if k not in known_keys}
+
                 tags.append(
                     {
                         "variation": variation_text,
@@ -322,6 +330,7 @@ def extract_tags_from_parsed_data(parsed_data):
                         "region_index": region_index,
                         "line_index_in_region": line_index_in_region,
                         "line_index_global": line_index_global,
+                        "extra": extra,
                     }
                 )
 

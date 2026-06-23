@@ -71,10 +71,10 @@ def create_page_tags(self, project_id, user_id, **kwargs):
                         line_text=tag_data.get("line_text", ""),
                         offset_in_line=tag_data.get("offset", 0),
                         length=tag_data.get("length", len(tag_data["variation"])),
-                        # DEPRECATED: Store legacy data in additional_information for backward compatibility
                         additional_information={
                             "line_id": tag_data.get("line_id", ""),
                             "continued": tag_data.get("continued", False),
+                            **tag_data.get("extra", {}),
                         },
                     )
                     is_assigned = assign_tag(tag, self.user)
@@ -228,10 +228,10 @@ def smart_sync_tags(project, user, celery_task):
             old_tag.line_text = new_tag_data.get("line_text", "")
             old_tag.offset_in_line = new_tag_data.get("offset", 0)
             old_tag.length = new_tag_data.get("length", len(new_tag_data["variation"]))
-            # DEPRECATED: Keep additional_information for backward compatibility
             old_tag.additional_information = {
                 "line_id": new_tag_data.get("line_id", ""),
                 "continued": new_tag_data.get("continued", False),
+                **new_tag_data.get("extra", {}),
             }
             # PRESERVE: dictionary_entry, date_variation_entry, is_parked
             old_tag.save(current_user=user)
@@ -274,10 +274,10 @@ def smart_sync_tags(project, user, celery_task):
                 line_text=new_tag_data.get("line_text", ""),
                 offset_in_line=new_tag_data.get("offset", 0),
                 length=new_tag_data.get("length", len(new_tag_data["variation"])),
-                # DEPRECATED: Keep additional_information for backward compatibility
                 additional_information={
                     "line_id": new_tag_data.get("line_id", ""),
                     "continued": new_tag_data.get("continued", False),
+                    **new_tag_data.get("extra", {}),
                 },
             )
 

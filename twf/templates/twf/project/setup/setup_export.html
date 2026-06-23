@@ -42,16 +42,21 @@
     <div class="row mt-5">
         <div class="col-12">
             <div class="border w-100">
-                {% if project.downloaded_zip_file %}
+                {% if project.downloaded_zip_file or project.transkribus_job_id %}
                     <div class="alert alert-warning" role="alert">
-                        <h4 class="alert-heading">Restart Export Process</h4>
+                        <h4 class="alert-heading">Reset Export Process</h4>
                         <p>
-                            You have already downloaded an export file from Transkribus.
-                            You can reset the export process and start a new job.
-                            This will delete the current export file but not affect any other data in your project.
+                            {% if project.downloaded_zip_file %}
+                                You have already downloaded an export file from Transkribus.
+                                You can reset the export process and start a new job.
+                                This will delete the current export file but not affect any other data in your project.
+                            {% else %}
+                                There is an active export job (ID: <strong>{{ project.transkribus_job_id }}</strong>).
+                                If the job has expired or you want to start a new one, reset the export state first.
+                            {% endif %}
                         </p>
                         <input id="restartExport" type="button" role="button" class="btn btn-dark mb-3"
-                               value="Restart Export Job" onclick="restart_export_job({{ project.pk }})">
+                               value="Reset Export State">
                     </div>
                 {% endif %}
             </div>

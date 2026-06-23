@@ -80,6 +80,7 @@ from twf.views.documents.views_documents import (
     TWFDocumentDetailView,
     TWFDocumentReviewView,
     TWFDocumentsSearchView,
+    TWFDocumentCrossReferencesView,
 )
 from twf.views.documents.views_documents_ai import TWFUnifiedDocumentBatchView
 from twf.views.export.views_crud import (
@@ -516,6 +517,11 @@ urlpatterns = [
         "documents/batch/ai/",
         TWFUnifiedDocumentBatchView.as_view(),
         name="documents_batch_ai_unified",
+    ),
+    path(
+        "documents/cross-references/",
+        TWFDocumentCrossReferencesView.as_view(),
+        name="documents_cross_references",
     ),
     #############################
     # TAGS
@@ -986,6 +992,11 @@ urlpatterns = [
         "celery/documents/batch/ai/",
         start_documents_batch_unified,
         name="task_documents_batch_unified",
+    ),
+    path(
+        "celery/documents/cross-references/",
+        start_build_cross_references,
+        name="task_documents_cross_references",
     ),
     path(
         "celery/dictionaries/batch/gnd/",

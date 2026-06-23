@@ -13,10 +13,11 @@ from django_filters.views import FilterView
 from django_tables2 import SingleTableView
 
 from twf.forms.filters.filters import DocumentFilter
-from twf.forms.documents.documents_forms import DocumentSearchForm
+from twf.forms.documents.documents_forms import DocumentSearchForm, CrossReferencesForm
 from twf.models import Document, Workflow
 from twf.tables.tables_document import DocumentTable
 from twf.views.views_base import TWFView, ProjectPermissionMixin
+from twf.tasks.task_triggers import start_build_cross_references
 
 # Create a logger for this module
 logger = logging.getLogger(__name__)
@@ -58,7 +59,12 @@ class TWFDocumentView(LoginRequiredMixin, TWFView):
                         "url": reverse("twf:documents_batch_ai_unified"),
                         "value": "Batch AI Enrichment",
                         "permission": "ai.manage",
-                    }
+                    },
+                    {
+                        "url": reverse("twf:documents_cross_references"),
+                        "value": "Document Cross-References",
+                        "permission": "document.edit",
+                    },
                 ],
             },
             {
@@ -855,3 +861,25 @@ class TWFDocumentReviewView(ProjectPermissionMixin, TWFDocumentView):
                     workflow.finish()
 
         return redirect("twf:documents_review")
+
+
+class TWFDocumentCrossReferencesView(ProjectPermissionMixin, FormView, TWFDocumentView):
+    """View for building document cross-references from tag additional_information keys."""
+
+    required_permission = "document.edit"
+    template_name = "twf/documents/cross_references.html"
+    page_title = "Document Cross-References"
+    form_class = CrossReferencesForm
+    success_url = reverse_lazy("twf:documents_cross_references")
+
+    def get_form_kwargs(self):
+        """Inject project and task URL into the form."""
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.get_project()
+        kwargs["data-start-url"] = reverse_lazy("twf:task_documents_cross_references")
+        kwargs["data-message"] = "Start building document cross-references now?"
+        return kwargs
+
+    def form_valid(self, form):
+        """Trigger the Celery task and return its JSON response."""
+        return start_build_cross_references(self.request)

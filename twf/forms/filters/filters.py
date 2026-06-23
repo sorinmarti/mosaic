@@ -3,6 +3,7 @@
 import logging
 import django_filters
 from django.db.models import Q
+from django.db.models.expressions import RawSQL
 from django.forms import CheckboxInput, DateInput
 from django.contrib.auth import get_user_model
 from django_select2.forms import Select2MultipleWidget
@@ -45,6 +46,13 @@ class TagFilter(django_filters.FilterSet):
         label="Document ID Contains",
     )
 
+    additional_info_key = django_filters.ChoiceFilter(
+        method="filter_additional_info_key",
+        label="Has Additional Info Key",
+        choices=[],
+        empty_label="Any",
+    )
+
     # Multi-select status filter
     status = django_filters.MultipleChoiceFilter(
         method="filter_status",
@@ -66,6 +74,7 @@ class TagFilter(django_filters.FilterSet):
             "variation",
             "variation_type",
             "document_id",
+            "additional_info_key",
             "status",
         ]
 
@@ -90,6 +99,30 @@ class TagFilter(django_filters.FilterSet):
         ]
         logger.debug("Tag variation type filter choices: %s", choices)
         self.filters["variation_type"].extra.update({"choices": choices})
+
+        # Dynamically populate choices for additional_information keys
+        try:
+            base_qs = PageTag.objects.filter(page__document__project=project).exclude(
+                additional_information={}
+            )
+            keys = (
+                base_qs.annotate(
+                    ai_key=RawSQL("jsonb_object_keys(additional_information)", [])
+                )
+                .values_list("ai_key", flat=True)
+                .distinct()
+                .order_by("ai_key")
+            )
+            key_choices = [(k, k) for k in keys if k]
+        except Exception:
+            key_choices = []
+        self.filters["additional_info_key"].extra.update({"choices": key_choices})
+
+    def filter_additional_info_key(self, queryset, name, value):
+        """Filter tags that have a specific key in additional_information."""
+        if not value:
+            return queryset
+        return queryset.filter(additional_information__has_key=value)
 
     def filter_status(self, queryset, name, value):
         """

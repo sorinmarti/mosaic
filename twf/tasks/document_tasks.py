@@ -1,8 +1,10 @@
 """Celery tasks for processing documents in a project."""
 
 import logging
+from django.utils import timezone
 from celery import shared_task
 from twf.tasks.task_base import BaseTWFTask
+from twf.models import PageTag
 
 logger = logging.getLogger(__name__)
 
@@ -59,3 +61,103 @@ def search_ai_for_docs(self, project_id, user_id, **kwargs):
     )
 
     return {"status": "completed", "documents_processed": doc_count}
+
+
+@shared_task(bind=True, base=BaseTWFTask)
+def build_cross_references(self, project_id, user_id, **kwargs):
+    """
+    Build document cross-references from tag additional_information keys.
+
+    For each document, finds all tags whose additional_information contains the
+    given reference_key, groups them by target document ID, and writes a
+    structured connection block to document.metadata[storage_key].
+
+    Args:
+        project_id: Project ID
+        user_id: User ID
+        **kwargs: Must include:
+            - reference_key: Key in additional_information (e.g. 'transkribus_doc_id')
+            - storage_key (optional): Metadata key to store results (default: 'corpus_connections')
+    """
+    self.validate_task_parameters(kwargs, ["reference_key"])
+
+    reference_key = kwargs["reference_key"]
+    storage_key = kwargs.get("storage_key", "corpus_connections")
+
+    documents = list(self.project.documents.all())
+    self.set_total_items(len(documents))
+
+    if self.twf_task:
+        self.twf_task.text += (
+            f"Building cross-references using key '{reference_key}' "
+            f"for {len(documents)} documents.\n"
+        )
+        self.twf_task.save(update_fields=["text"])
+
+    # Pre-fetch all documents in the project keyed by document_id for fast in-corpus lookup
+    corpus_map = {doc.document_id: doc for doc in documents}
+
+    for document in documents:
+        tags = (
+            PageTag.objects.filter(
+                page__document=document,
+                additional_information__has_key=reference_key,
+            )
+            .select_related("page")
+        )
+
+        if not tags.exists():
+            document.metadata[storage_key] = {
+                "source_key": reference_key,
+                "built_at": timezone.now().isoformat(),
+                "total_connections": 0,
+                "total_mentions": 0,
+                "connections": [],
+            }
+            document.save(current_user=self.user)
+            self.advance_task(status="skipped")
+            continue
+
+        # Group mentions by target document id
+        connections_map = {}
+        for tag in tags:
+            target_id = str(tag.additional_information.get(reference_key, "")).strip()
+            if not target_id:
+                continue
+            if target_id not in connections_map:
+                connections_map[target_id] = []
+            connections_map[target_id].append({
+                "tag_pk": tag.pk,
+                "variation": tag.variation,
+                "variation_type": tag.variation_type,
+                "page_pk": tag.page.pk,
+                "page_number": tag.page.tk_page_number,
+                "line_text": tag.line_text,
+            })
+
+        connections = []
+        for target_id, mentions in connections_map.items():
+            target_doc = corpus_map.get(target_id)
+            connections.append({
+                "target_doc_id": target_id,
+                "target_doc_pk": target_doc.pk if target_doc else None,
+                "target_doc_title": target_doc.title if target_doc else None,
+                "in_corpus": target_doc is not None,
+                "weight": len(mentions),
+                "mentions": mentions,
+            })
+
+        connections.sort(key=lambda c: c["weight"], reverse=True)
+        total_mentions = sum(c["weight"] for c in connections)
+
+        document.metadata[storage_key] = {
+            "source_key": reference_key,
+            "built_at": timezone.now().isoformat(),
+            "total_connections": len(connections),
+            "total_mentions": total_mentions,
+            "connections": connections,
+        }
+        document.save(current_user=self.user)
+        self.advance_task(status="success")
+
+    return {"status": "completed", "documents_processed": len(documents)}

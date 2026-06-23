@@ -4,10 +4,12 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, Row, Column, Div, HTML
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models.expressions import RawSQL
 from django.template.defaultfilters import safe
 from django_select2.forms import Select2MultipleWidget
 
-from twf.models import Document, DictionaryEntry, Page
+from twf.forms.base_batch_forms import BaseBatchForm
+from twf.models import Document, DictionaryEntry, Page, PageTag
 
 
 class DocumentSearchForm(forms.Form):
@@ -268,6 +270,53 @@ class DocumentSearchForm(forms.Form):
                 css_class="text-end pt-3",
             )
         )
+
+
+class CrossReferencesForm(BaseBatchForm):
+    """Form for building document cross-references from tag additional_information keys."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the form and populate reference_key choices from the project's tags."""
+        super().__init__(*args, **kwargs)
+
+        # Collect distinct keys from additional_information across the project's tags
+        try:
+            keys_qs = (
+                PageTag.objects.filter(page__document__project=self.project)
+                .exclude(additional_information={})
+                .annotate(ai_key=RawSQL("jsonb_object_keys(additional_information)", []))
+                .values_list("ai_key", flat=True)
+                .distinct()
+                .order_by("ai_key")
+            )
+            key_choices = [(k, k) for k in keys_qs if k]
+        except Exception:
+            key_choices = []
+
+        self.fields["reference_key"] = forms.ChoiceField(
+            choices=key_choices,
+            label="Reference Key",
+            help_text="The key in tag additional data that contains the target document ID.",
+        )
+        self.fields["storage_key"] = forms.CharField(
+            initial="corpus_connections",
+            label="Metadata Storage Key",
+            help_text="The key under which the connection block is stored in document metadata.",
+        )
+
+    def get_dynamic_fields(self):
+        """Return layout fields placed above the progress bar."""
+        return [
+            Row(
+                Column("reference_key", css_class="form-group col-md-6 mb-0"),
+                Column("storage_key", css_class="form-group col-md-6 mb-0"),
+                css_class="row form-row",
+            ),
+        ]
+
+    def get_button_label(self):
+        """Return label for the start button."""
+        return "Build Cross-References"
 
 
 class DocumentForm(forms.ModelForm):
