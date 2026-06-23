@@ -1,39 +1,37 @@
 """Render custom filters for the table."""
-import json
 
 from django import template
-from django.utils.safestring import mark_safe
 
 register = template.Library()
 
 
-@register.filter
-def pprint_json(value):
-    """Pretty-print a dict/list as formatted JSON for use in a textarea."""
-    if value is None:
-        return "{}"
-    try:
-        return json.dumps(value, indent=2, ensure_ascii=False)
-    except (TypeError, ValueError):
-        return str(value)
-
-@register.inclusion_tag('twf/tables/filter_form.html')
+@register.inclusion_tag("twf/tables/filter_form.html")
 def twf_filter(my_twf_filter):
     """
     Render a custom filter form for the given filter.
     """
-    return {'filter': my_twf_filter}
+    return {"filter": my_twf_filter}
 
 
 @register.filter
 def add_class(field, css_class):
     """
-    Add a CSS class to the given form field.
+    Add a CSS class to the given form field while preserving existing widget attributes.
     :param field:
     :param css_class:
     :return:
     """
-    return field.as_widget(attrs={"class": css_class})
+    # Get existing widget attributes
+    existing_attrs = field.field.widget.attrs.copy() if hasattr(field.field.widget, 'attrs') else {}
+
+    # Merge existing class with new class
+    existing_class = existing_attrs.get('class', '')
+    if existing_class:
+        existing_attrs['class'] = f"{existing_class} {css_class}"
+    else:
+        existing_attrs['class'] = css_class
+
+    return field.as_widget(attrs=existing_attrs)
 
 
 @register.filter
@@ -68,22 +66,56 @@ def highlight_matches(text, search_term):
     """Highlight search term matches in text."""
     if not text or not search_term:
         return text
-    
+
     # Escape HTML special characters to prevent injection
     from django.utils.html import escape
+
     text = escape(text)
     search_term = escape(search_term)
-    
+
     # Replace matches with highlighted version
     import re
+
     pattern = re.compile(re.escape(search_term), re.IGNORECASE)
-    highlighted = pattern.sub(r'<mark>\g<0></mark>', text)
-    
+    highlighted = pattern.sub(r"<mark>\g<0></mark>", text)
+
     return highlighted
+
 
 @register.filter
 def get_item(dictionary, key):
+    """
+    Get an item from a dictionary using a key.
+
+    Args:
+        dictionary: Dictionary to retrieve value from
+        key: Key to look up in the dictionary
+
+    Returns:
+        The value associated with the key, or None if key not found
+    """
     return dictionary.get(key)
+
+
+@register.filter
+def replace(value, arg):
+    """
+    Replace occurrences of a substring in a string value.
+
+    Argument format: 'old:new' where ':' separates the old and new values.
+    Example: {{ value|replace:"T: " }} replaces 'T' with ' '.
+
+    Args:
+        value: The string to perform replacement on
+        arg: Replacement spec in 'old:new' format
+
+    Returns:
+        String with replacements applied
+    """
+    parts = str(arg).split(':', 1)
+    old = parts[0]
+    new = parts[1] if len(parts) > 1 else ''
+    return str(value).replace(old, new)
 
 
 @register.filter
@@ -110,15 +142,15 @@ def highlight_tag_in_context(tag):
 
     # Fallback for old data without explicit fields: search through parsed_data
     page = tag.page
-    if not hasattr(page, 'parsed_data') or not page.parsed_data:
+    if not hasattr(page, "parsed_data") or not page.parsed_data:
         return escape(tag.variation)
 
     # Search for the line containing this tag variation
     variation_stripped = tag.variation.strip()
     target_line = None
 
-    for element in page.parsed_data.get('elements', []):
-        text_lines = element.get('element_data', {}).get('text_lines', [])
+    for element in page.parsed_data.get("elements", []):
+        text_lines = element.get("element_data", {}).get("text_lines", [])
         for line in text_lines:
             if variation_stripped in line:
                 target_line = line
@@ -139,9 +171,12 @@ def highlight_tag_in_context(tag):
     # Extract and highlight
     before = escape(target_line[:pos])
     highlighted = escape(variation_stripped)
-    after = escape(target_line[pos + len(variation_stripped):])
+    after = escape(target_line[pos + len(variation_stripped) :])
 
-    return mark_safe(f'{before}<mark style="background-color: #ffc107; font-weight: bold; padding: 2px 4px;">{highlighted}</mark>{after}')
+    return mark_safe(
+        f'{before}<mark style="background-color: #ffc107; font-weight: bold; '
+        f'padding: 2px 4px;">{highlighted}</mark>{after}'
+    )
 
 
 @register.filter
@@ -161,34 +196,38 @@ def mark_tags_inline(page):
     from django.utils.html import escape
     from django.utils.safestring import mark_safe
 
-    if not hasattr(page, 'parsed_data') or not page.parsed_data:
+    if not hasattr(page, "parsed_data") or not page.parsed_data:
         return []
 
     # Get all tags for this page to look up dictionary entries
     tags_dict = {}
     for tag in page.tags.all():
         # Index by (element_id, type, variation) for lookup
-        key = (tag.additional_information.get('line_id', ''),
-               tag.variation_type,
-               tag.variation)
+        key = (
+            tag.additional_information.get("line_id", ""),
+            tag.variation_type,
+            tag.variation,
+        )
         tags_dict[key] = {
-            'has_entry': bool(tag.dictionary_entry),
-            'entry_label': str(tag.dictionary_entry) if tag.dictionary_entry else None,
-            'is_parked': tag.is_parked
+            "has_entry": bool(tag.dictionary_entry),
+            "entry_label": str(tag.dictionary_entry) if tag.dictionary_entry else None,
+            "is_parked": tag.is_parked,
         }
 
     marked_blocks = []
-    for block in page.parsed_data.get('elements', []):
-        element_id = block.get('id', '')
-        element_data = block.get('element_data', {})
+    for block in page.parsed_data.get("elements", []):
+        element_id = block.get("id", "")
+        element_data = block.get("element_data", {})
 
         marked_block = {
-            'structure_type': element_data.get('custom_structure', {}).get('structure', {}).get('type', 'Unknown'),
-            'text_lines': []
+            "structure_type": element_data.get("custom_structure", {})
+            .get("structure", {})
+            .get("type", "Unknown"),
+            "text_lines": [],
         }
 
-        text_lines = element_data.get('text_lines', [])
-        custom_list = element_data.get('custom_list', [])
+        text_lines = element_data.get("text_lines", [])
+        custom_list = element_data.get("custom_list", [])
 
         # Process each line with its corresponding custom_list entry
         for idx, line_text in enumerate(text_lines):
@@ -206,25 +245,29 @@ def mark_tags_inline(page):
                     # Extract actual text from TRIMMED line and try to match with database
                     enriched_tags = []
                     for tag in tags:
-                        offset = tag['offset']
-                        length = tag['length']
+                        offset = tag["offset"]
+                        length = tag["length"]
 
                         # Extract from trimmed text (where offsets are based)
                         if offset >= 0 and offset + length <= len(line_text_trimmed):
-                            variation = line_text_trimmed[offset:offset + length]
-                            tag['variation'] = variation
+                            variation = line_text_trimmed[offset : offset + length]
+                            tag["variation"] = variation
 
                             # Adjust offset for markup on original line_text with leading spaces
-                            tag['offset'] = offset + leading_space_count
+                            tag["offset"] = offset + leading_space_count
 
                             # Try to find matching database tag (strip for matching)
                             variation_stripped = variation.strip()
-                            db_key = (element_id, tag['variation_type'], variation_stripped)
+                            db_key = (
+                                element_id,
+                                tag["variation_type"],
+                                variation_stripped,
+                            )
                             if db_key in tags_dict:
                                 db_info = tags_dict[db_key]
-                                tag['has_entry'] = db_info['has_entry']
-                                tag['entry_label'] = db_info['entry_label']
-                                tag['is_parked'] = db_info['is_parked']
+                                tag["has_entry"] = db_info["has_entry"]
+                                tag["entry_label"] = db_info["entry_label"]
+                                tag["is_parked"] = db_info["is_parked"]
 
                         enriched_tags.append(tag)
 
@@ -234,7 +277,7 @@ def mark_tags_inline(page):
             else:
                 marked_text = escape(line_text)
 
-            marked_block['text_lines'].append(mark_safe(marked_text))
+            marked_block["text_lines"].append(mark_safe(marked_text))
 
         marked_blocks.append(marked_block)
 
@@ -252,48 +295,46 @@ def _parse_tags_from_custom_string(custom_str, element_id, tags_dict):
 
     tags = []
     # Pattern to match tag_type {offset:N; length:M;}
-    pattern = r'(\w+)\s+\{([^}]+)\}'
+    pattern = r"(\w+)\s+\{([^}]+)\}"
 
     for match in re.finditer(pattern, custom_str):
         tag_type = match.group(1)
         attrs_str = match.group(2)
 
         # Skip readingOrder tags
-        if tag_type == 'readingOrder':
+        if tag_type == "readingOrder":
             continue
 
         # Parse attributes
         offset = None
         length = None
-        for attr in attrs_str.split(';'):
+        for attr in attrs_str.split(";"):
             attr = attr.strip()
-            if ':' in attr:
-                key, value = attr.split(':', 1)
+            if ":" in attr:
+                key, value = attr.split(":", 1)
                 key = key.strip()
                 value = value.strip()
-                if key == 'offset':
+                if key == "offset":
                     offset = int(value)
-                elif key == 'length':
+                elif key == "length":
                     length = int(value)
 
         if offset is not None and length is not None and length > 0:
             tag_info = {
-                'offset': offset,
-                'length': length,
-                'variation_type': tag_type,
-                'has_entry': False,
-                'entry_label': None,
-                'is_parked': False,
-                'variation': ''  # Will be extracted from text
+                "offset": offset,
+                "length": length,
+                "variation_type": tag_type,
+                "has_entry": False,
+                "entry_label": None,
+                "is_parked": False,
+                "variation": "",  # Will be extracted from text
             }
 
             tags.append(tag_info)
 
     # Sort by offset
-    tags.sort(key=lambda t: t['offset'])
+    tags.sort(key=lambda t: t["offset"])
     return tags
-
-
 
 
 def _insert_tag_markup(text, tags):
@@ -319,35 +360,35 @@ def _insert_tag_markup(text, tags):
 
     # Process tags in order
     for tag in tags:
-        offset = tag['offset']
-        length = tag['length']
+        offset = tag["offset"]
+        length = tag["length"]
 
         # Handle overlapping or invalid offsets
         if offset < last_pos:
             continue
 
         # Determine CSS class based on tag properties
-        if tag['is_parked']:
-            css_class = 'tag-parked'
-        elif tag['has_entry']:
-            css_class = 'tag-resolved'
+        if tag["is_parked"]:
+            css_class = "tag-parked"
+        elif tag["has_entry"]:
+            css_class = "tag-resolved"
         else:
-            css_class = 'tag-unresolved'
+            css_class = "tag-unresolved"
 
         # Build tooltip with entry label and type if available
         tooltip_parts = []
-        if tag['entry_label']:
+        if tag["entry_label"]:
             tooltip_parts.append(f"{tag['variation_type']}: {tag['entry_label']}")
         else:
             tooltip_parts.append(f"{tag['variation_type']}: {tag['variation']}")
-        title = ' | '.join(tooltip_parts)
+        title = " | ".join(tooltip_parts)
 
         # Add text before this tag
         if offset > last_pos:
             result_parts.append(escape(text[last_pos:offset]))
 
         # Add the tagged segment
-        tagged_text = escape(text[offset:offset + length])
+        tagged_text = escape(text[offset : offset + length])
         result_parts.append(
             f'<span class="inline-tag {css_class}" '
             f'title="{escape(title)}">{tagged_text}</span>'
@@ -359,4 +400,4 @@ def _insert_tag_markup(text, tags):
     if last_pos < len(text):
         result_parts.append(escape(text[last_pos:]))
 
-    return ''.join(result_parts)
+    return "".join(result_parts)

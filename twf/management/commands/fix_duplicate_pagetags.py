@@ -1,4 +1,5 @@
 """Management command to identify and remove duplicate PageTag objects."""
+
 from django.core.management.base import BaseCommand
 from django.db.models import Count
 from twf.models import PageTag
@@ -6,6 +7,7 @@ from twf.models import PageTag
 
 class Command(BaseCommand):
     """Management command to identify and remove duplicate PageTag objects."""
+
     help = (
         "Identify and optionally remove duplicate PageTag objects. "
         "Duplicates are identified by matching page, variation, variation_type, "
@@ -14,26 +16,26 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--project-id',
+            "--project-id",
             type=int,
-            help="Optional: Filter by project ID to check only PageTags in specific project."
+            help="Optional: Filter by project ID to check only PageTags in specific project.",
         )
         parser.add_argument(
-            '--delete',
-            action='store_true',
-            help='Delete duplicate PageTags, keeping only the first one for each duplicate group.'
+            "--delete",
+            action="store_true",
+            help="Delete duplicate PageTags, keeping only the first one for each duplicate group.",
         )
         parser.add_argument(
-            '--dry-run',
-            action='store_true',
-            help='Perform a dry run without actually deleting anything.'
+            "--dry-run",
+            action="store_true",
+            help="Perform a dry run without actually deleting anything.",
         )
 
     def handle(self, *args, **options):
         """Handle the management command."""
-        project_id = options.get('project_id')
-        delete_duplicates = options['delete']
-        dry_run = options['dry_run']
+        project_id = options.get("project_id")
+        delete_duplicates = options["delete"]
+        dry_run = options["dry_run"]
 
         # Build queryset
         queryset = PageTag.objects.all()
@@ -51,11 +53,10 @@ class Command(BaseCommand):
         # Find duplicates based on unique fields
         # Group by page, variation, variation_type, and dictionary_entry
         duplicates = (
-            queryset
-            .values('page', 'variation', 'variation_type', 'dictionary_entry')
-            .annotate(count=Count('id'))
+            queryset.values("page", "variation", "variation_type", "dictionary_entry")
+            .annotate(count=Count("id"))
             .filter(count__gt=1)
-            .order_by('-count')
+            .order_by("-count")
         )
 
         if not duplicates:
@@ -63,7 +64,7 @@ class Command(BaseCommand):
             return
 
         duplicate_count = len(duplicates)
-        total_duplicates = sum(d['count'] - 1 for d in duplicates)
+        total_duplicates = sum(d["count"] - 1 for d in duplicates)
 
         self.stdout.write(
             self.style.WARNING(
@@ -75,24 +76,22 @@ class Command(BaseCommand):
         deleted_count = 0
 
         for duplicate in duplicates:
-            page_id = duplicate['page']
-            variation = duplicate['variation']
-            variation_type = duplicate['variation_type']
-            dictionary_entry_id = duplicate['dictionary_entry']
-            count = duplicate['count']
+            page_id = duplicate["page"]
+            variation = duplicate["variation"]
+            variation_type = duplicate["variation_type"]
+            dictionary_entry_id = duplicate["dictionary_entry"]
+            count = duplicate["count"]
 
             # Fetch all PageTags in this duplicate group
             duplicate_tags = queryset.filter(
                 page_id=page_id,
                 variation=variation,
                 variation_type=variation_type,
-                dictionary_entry_id=dictionary_entry_id
-            ).order_by('id')
+                dictionary_entry_id=dictionary_entry_id,
+            ).order_by("id")
 
             self.stdout.write(
-                self.style.WARNING(
-                    f"\nDuplicate Group ({count} instances):"
-                )
+                self.style.WARNING(f"\nDuplicate Group ({count} instances):")
             )
             self.stdout.write(f"  Page ID: {page_id}")
             self.stdout.write(f"  Variation: {variation}")
@@ -107,17 +106,23 @@ class Command(BaseCommand):
             # Check for differences in additional_information or other fields
             has_differences = False
             for tag in duplicate_tags[1:]:
-                if (tag.additional_information != first_tag.additional_information or
-                    tag.date_variation_entry_id != first_tag.date_variation_entry_id or
-                    tag.is_parked != first_tag.is_parked):
+                if (
+                    tag.additional_information != first_tag.additional_information
+                    or tag.date_variation_entry_id != first_tag.date_variation_entry_id
+                    or tag.is_parked != first_tag.is_parked
+                ):
                     has_differences = True
                     self.stdout.write(
                         self.style.WARNING(
                             f"  WARNING: PageTag ID {tag.id} has different metadata!"
                         )
                     )
-                    self.stdout.write(f"    - additional_information: {tag.additional_information}")
-                    self.stdout.write(f"    - date_variation_entry_id: {tag.date_variation_entry_id}")
+                    self.stdout.write(
+                        f"    - additional_information: {tag.additional_information}"
+                    )
+                    self.stdout.write(
+                        f"    - date_variation_entry_id: {tag.date_variation_entry_id}"
+                    )
                     self.stdout.write(f"    - is_parked: {tag.is_parked}")
 
             # Delete duplicates if requested
@@ -145,7 +150,7 @@ class Command(BaseCommand):
                 )
 
         # Summary
-        self.stdout.write("\n" + "="*60)
+        self.stdout.write("\n" + "=" * 60)
         if delete_duplicates and not dry_run:
             self.stdout.write(
                 self.style.SUCCESS(

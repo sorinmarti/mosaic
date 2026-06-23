@@ -1,4 +1,5 @@
 """This module contains the functions to export dictionaries and tags to JSON and CSV formats."""
+
 import json
 import re
 
@@ -15,6 +16,15 @@ class ExportCreator:
         self.configuration = configuration
 
     def create_item_data(self, item):
+        """
+        Create export data for an item (Project, Document, Page, or CollectionItem).
+
+        Args:
+            item: The item to export (Project, Document, Page, or CollectionItem instance)
+
+        Returns:
+            dict: Exported data based on the configuration
+        """
         data = {}
         config = self.configuration.config
 
@@ -87,7 +97,7 @@ class ExportCreator:
                 template = source
 
                 # Find all {field_name} placeholders
-                placeholders = re.findall(r'\{([^}]+)\}', template)
+                placeholders = re.findall(r"\{([^}]+)\}", template)
 
                 # Replace each placeholder with its value
                 for placeholder in placeholders:
@@ -121,7 +131,9 @@ class ExportCreator:
 
                         # Get the field value
                         if target_item:
-                            placeholder_value = str(getattr(target_item, field_name, ""))
+                            placeholder_value = str(
+                                getattr(target_item, field_name, "")
+                            )
                         else:
                             placeholder_value = ""
 
@@ -169,6 +181,16 @@ class ExportCreator:
         return data
 
     def compute_special_field(self, field_key, item):
+        """
+        Compute special derived fields for export (e.g., tag lists, text content).
+
+        Args:
+            field_key (str): The special field identifier to compute
+            item: The item to compute the field for (Document, Page, or CollectionItem)
+
+        Returns:
+            The computed field value
+        """
         if field_key == "tag_list":
             tags = []
             if isinstance(item, Document):
@@ -197,10 +219,20 @@ class ExportCreator:
             return count
 
         elif field_key == "linked_tags_list":
-            return [tag.dictionary_entry.label for tag in item.tags.all() if tag.dictionary_entry]
+            return [
+                tag.dictionary_entry.label
+                for tag in item.tags.all()
+                if tag.dictionary_entry
+            ]
 
         elif field_key == "linked_tags_list_unique":
-            return list(set(tag.dictionary_entry.label for tag in item.tags.all() if tag.dictionary_entry))
+            return list(
+                set(
+                    tag.dictionary_entry.label
+                    for tag in item.tags.all()
+                    if tag.dictionary_entry
+                )
+            )
 
         elif field_key == "linked_tags_count":
             return sum(1 for tag in item.tags.all() if tag.dictionary_entry)
@@ -208,7 +240,8 @@ class ExportCreator:
         elif field_key == "entry_list":
             return [
                 {"label": tag.dictionary_entry.label, "id": tag.dictionary_entry.id}
-                for tag in item.tags.all() if tag.dictionary_entry
+                for tag in item.tags.all()
+                if tag.dictionary_entry
             ]
 
         elif field_key == "word_count":
@@ -218,16 +251,13 @@ class ExportCreator:
             return len(item.document_configuration.get("annotations", []))
 
         elif field_key == "item_context":
-            if hasattr(item, 'document'):
+            if hasattr(item, "document"):
                 return {"type": "document", "id": item.document.id}
             return {}
 
         elif field_key == "project_members":
             return [
-                {
-                    "name": p.user.get_full_name() or p.user.username,
-                    "orcid": p.orc_id
-                }
+                {"name": p.user.get_full_name() or p.user.username, "orcid": p.orc_id}
                 for p in self.project.get_project_members()
             ]
 
@@ -253,12 +283,14 @@ class ExportCreator:
 
     def get_nested_metadata(self, metadata, field_key):
         """Safely retrieve nested metadata using dot and bracket notation."""
-        parts = re.split(r'\.(?![^\[]*\])', field_key)  # split on '.' outside of brackets
+        parts = re.split(
+            r"\.(?![^\[]*\])", field_key
+        )  # split on '.' outside of brackets
         current = metadata
         for part in parts:
             if isinstance(current, dict):
                 # handle dict key or indexed key like key[0]
-                match = re.match(r'([^\[]+)(\[(\d+)\])?', part)
+                match = re.match(r"([^\[]+)(\[(\d+)\])?", part)
                 if match:
                     key = match.group(1)
                     index = match.group(3)
@@ -271,22 +303,22 @@ class ExportCreator:
             else:
                 return None
         return current
-        
+
     def set_nested_value(self, data, field_key, value):
         """Assign value to a possibly nested dictionary key using dot notation.
-        
+
         If field_key contains dots (e.g., 'metadata.author.name'), it creates
         nested dictionaries as needed and assigns the value to the deepest level.
         """
-        if '.' not in field_key:
+        if "." not in field_key:
             # Simple case: direct assignment
             data[field_key] = value
             return
-            
+
         # Split the key into parts for nested assignment
-        parts = field_key.split('.')
+        parts = field_key.split(".")
         current = data
-        
+
         # Navigate through or create nested dictionaries
         for i, part in enumerate(parts[:-1]):  # All parts except the last one
             if part not in current:
@@ -295,7 +327,7 @@ class ExportCreator:
                 # If the current value is not a dict, replace it with a dict
                 current[part] = {}
             current = current[part]  # Move to the next level
-            
+
         # Assign the value to the final key
         current[parts[-1]] = value
 
@@ -307,18 +339,18 @@ class ExportCreator:
             "project": project_data,
         }
 
-        if self.configuration.export_type == 'document':
+        if self.configuration.export_type == "document":
             sample_data.update({"document": self.create_item_data(random_document)})
-        elif self.configuration.export_type == 'page':
+        elif self.configuration.export_type == "page":
             random_page = random_document.pages.order_by(Random()).first()
             sample_data.update({"page": self.create_item_data(random_page)})
-        elif self.configuration.export_type == 'collection':
+        elif self.configuration.export_type == "collection":
             random_collection = self.project.collections.order_by(Random()).first()
             random_item = random_collection.items.order_by(Random()).first()
             sample_data.update({"item": self.create_item_data(random_item)})
-        elif self.configuration.export_type == 'dictionary':
+        elif self.configuration.export_type == "dictionary":
             sample_data = {"msg": "niy"}
-        elif self.configuration.export_type == 'tag_report':
+        elif self.configuration.export_type == "tag_report":
             sample_data = {"msg": "niy"}
         else:
             raise ValueError("Invalid export type")
@@ -326,29 +358,45 @@ class ExportCreator:
         return sample_data
 
     def get_number_of_items(self):
-        if self.configuration.export_type == 'document':
+        """
+        Get the total number of items to export based on the export type.
+
+        Returns:
+            int: Number of items to export
+        """
+        if self.configuration.export_type == "document":
             return self.project.documents.count()
-        elif self.configuration.export_type == 'page':
+        elif self.configuration.export_type == "page":
             return Page.objects.filter(document__project=self.project).count()
-        elif self.configuration.export_type == 'collection':
+        elif self.configuration.export_type == "collection":
             return 0
-        elif self.configuration.export_type == 'dictionary':
+        elif self.configuration.export_type == "dictionary":
             return 0
-        elif self.configuration.export_type == 'tag_report':
+        elif self.configuration.export_type == "tag_report":
             return 0
         else:
             raise ValueError("Invalid export type")
 
     def get_items(self):
-        if self.configuration.export_type == 'document':
-            return self.project.documents.all().order_by('document_id')
-        elif self.configuration.export_type == 'page':
-            return Page.objects.filter(document__project=self.project).all().order_by('document__document_id', 'tk_page_number')
-        elif self.configuration.export_type == 'collection':
+        """
+        Get the queryset of items to export based on the export type.
+
+        Returns:
+            QuerySet: The items to export (documents, pages, or collection items)
+        """
+        if self.configuration.export_type == "document":
+            return self.project.documents.all().order_by("document_id")
+        elif self.configuration.export_type == "page":
+            return (
+                Page.objects.filter(document__project=self.project)
+                .all()
+                .order_by("document__document_id", "tk_page_number")
+            )
+        elif self.configuration.export_type == "collection":
             return []
-        elif self.configuration.export_type == 'dictionary':
+        elif self.configuration.export_type == "dictionary":
             return []
-        elif self.configuration.export_type == 'tag_report':
+        elif self.configuration.export_type == "tag_report":
             return []
         else:
             raise ValueError("Invalid export type")
@@ -362,18 +410,23 @@ def get_dictionary_json_data(dictionary_id, include_uses=True):
         "name": dictionary.label,
         "type": dictionary.type,
         "metadata": {},
-        "entries": []
+        "entries": [],
     }
 
     entries = dictionary.entries.all()
     for entry in entries:
         entry_d = {
-                "label": entry.label,
-                "variations": list(entry.variations.all().values_list('variation', flat=True))
-            }
+            "label": entry.label,
+            "variations": list(
+                entry.variations.all().values_list("variation", flat=True)
+            ),
+        }
         if include_uses:
-            entry_d["uses"] = list(Document.objects.filter(pages__tags__dictionary_entry=entry).
-                                   distinct().values_list('document_id', flat=True))
+            entry_d["uses"] = list(
+                Document.objects.filter(pages__tags__dictionary_entry=entry)
+                .distinct()
+                .values_list("document_id", flat=True)
+            )
 
         json_data["entries"].append(entry_d)
     return json_data
@@ -386,33 +439,36 @@ def get_dictionary_csv_data(pk, include_metadata=True, include_uses=False):
     entries = dictionary.entries.all()
 
     # Create the CSV header
-    csv_header = 'entry;variations'
+    csv_header = "entry;variations"
     if include_metadata:
-        csv_header += ';metadata'
+        csv_header += ";metadata"
     if include_uses:
-        csv_header += ';documents;collection_items'
-    csv_header += '\n'
+        csv_header += ";documents;collection_items"
+    csv_header += "\n"
 
-    csv_body = ''
+    csv_body = ""
     for entry in entries:
         # Add label
-        csv_line = f'{entry.label};'
+        csv_line = f"{entry.label};"
 
         # Add variations
-        variations = entry.variations.all().values_list('variation', flat=True)
-        csv_line += ','.join(variations)
+        variations = entry.variations.all().values_list("variation", flat=True)
+        csv_line += ",".join(variations)
 
         # Add metadata
         if include_metadata:
-            csv_line += f';{json.dumps(entry.metadata)}'
+            csv_line += f";{json.dumps(entry.metadata)}"
 
         # Add uses
         if include_uses:
-            documents_list = (Document.objects.filter(pages__tags__dictionary_entry=entry).distinct().
-                              values_list('document_id', flat=True))
+            documents_list = (
+                Document.objects.filter(pages__tags__dictionary_entry=entry)
+                .distinct()
+                .values_list("document_id", flat=True)
+            )
             csv_line += f';{",".join(documents_list)};niy'
 
-        csv_line += '\n'
+        csv_line += "\n"
         csv_body += csv_line
 
     return csv_header + csv_body
@@ -422,17 +478,18 @@ def get_tags_json_data(project_id):
     """Get the JSON data for the tags."""
     tags = PageTag.objects.filter(page__document__project_id=project_id)
 
-    json_data = {
-        "entries": []
-    }
+    json_data = {"entries": []}
 
     for entry in tags:
         json_data["entries"].append(
             {
                 "label": entry.variation,
                 "type": entry.variation_type,
-                "documents": list(Document.objects.filter(pages__tags=entry).distinct().
-                                  values_list('document_id', flat=True))
+                "documents": list(
+                    Document.objects.filter(pages__tags=entry)
+                    .distinct()
+                    .values_list("document_id", flat=True)
+                ),
             }
         )
     return json_data
@@ -440,10 +497,13 @@ def get_tags_json_data(project_id):
 
 def get_tags_csv_data(project_id):
     """Get the CSV data for the tags."""
-    csv_data = 'entry;type;documents\n'
+    csv_data = "entry;type;documents\n"
     tags = PageTag.objects.filter(page__document__project_id=project_id)
     for tag in tags:
-        documents = Document.objects.filter(pages__tags=tag).distinct().values_list('document_id', flat=True)
+        documents = (
+            Document.objects.filter(pages__tags=tag)
+            .distinct()
+            .values_list("document_id", flat=True)
+        )
         csv_data += f'{tag.variation};{tag.variation_type};{",".join(documents)}\n'
     return csv_data
-

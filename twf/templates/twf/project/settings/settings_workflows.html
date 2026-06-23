@@ -2,17 +2,19 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <p class="lead">Configure workflow definitions for document and collection review workflows.</p>
-
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i>
-        <strong>About Workflow Configurations:</strong>
-        <ul class="mb-0">
-            <li>Define custom instructions, fields, and batch sizes for review workflows</li>
-            <li>Instructions support Markdown formatting for rich text</li>
-            <li>Custom fields allow you to collect structured data during review</li>
-            <li>Changes apply to new workflows (existing workflows are not affected)</li>
-        </ul>
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">About Workflow Configurations</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Configure workflow definitions for document review, collection review, tag grouping, and date normalization workflows.</p>
+            <ul class="mb-0">
+                <li>Define custom instructions, fields, and batch sizes for review workflows</li>
+                <li>Instructions support Markdown formatting for rich text</li>
+                <li>Custom fields allow you to collect structured data during review</li>
+                <li>Changes apply to new workflows (existing workflows are not affected)</li>
+            </ul>
+        </div>
     </div>
 
     <form method="post" id="workflow-settings-form">
@@ -32,6 +34,20 @@
                         data-bs-target="#collection_review" type="button" role="tab" aria-controls="collection_review"
                         aria-selected="false">
                     Collection Review
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tag-grouping-tab" data-bs-toggle="tab"
+                        data-bs-target="#tag_grouping" type="button" role="tab" aria-controls="tag_grouping"
+                        aria-selected="false">
+                    Tag Grouping
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="date-norm-tab" data-bs-toggle="tab"
+                        data-bs-target="#date_norm" type="button" role="tab" aria-controls="date_norm"
+                        aria-selected="false">
+                    Date Normalization
                 </button>
             </li>
         </ul>
@@ -154,6 +170,108 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tag Grouping Tab -->
+            <div class="tab-pane fade" id="tag_grouping" role="tabpanel" aria-labelledby="tag-grouping-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Configuration</h4>
+                        <div class="mb-3">
+                            {{ form.tag_grouping_title.label_tag }}
+                            {{ form.tag_grouping_title }}
+                            {% if form.tag_grouping_title.errors %}
+                                <div class="text-danger">{{ form.tag_grouping_title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.tag_grouping_description.label_tag }}
+                            {{ form.tag_grouping_description }}
+                            <small class="form-text text-muted">{{ form.tag_grouping_description.help_text }}</small>
+                            {% if form.tag_grouping_description.errors %}
+                                <div class="text-danger">{{ form.tag_grouping_description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.tag_grouping_instructions.label_tag }}
+                            {{ form.tag_grouping_instructions }}
+                            <small class="form-text text-muted">{{ form.tag_grouping_instructions.help_text }}</small>
+                            {% if form.tag_grouping_instructions.errors %}
+                                <div class="text-danger">{{ form.tag_grouping_instructions.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.tag_grouping_batch_size.label_tag }}
+                            {{ form.tag_grouping_batch_size }}
+                            <small class="form-text text-muted">{{ form.tag_grouping_batch_size.help_text }}</small>
+                            {% if form.tag_grouping_batch_size.errors %}
+                                <div class="text-danger">{{ form.tag_grouping_batch_size.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Preview</h4>
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>Instructions Preview</strong>
+                            </div>
+                            <div class="card-body" id="tag-grouping-instructions-preview">
+                                <em class="text-muted">Instructions will appear here...</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date Normalization Tab -->
+            <div class="tab-pane fade" id="date_norm" role="tabpanel" aria-labelledby="date-norm-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Configuration</h4>
+                        <div class="mb-3">
+                            {{ form.date_norm_title.label_tag }}
+                            {{ form.date_norm_title }}
+                            {% if form.date_norm_title.errors %}
+                                <div class="text-danger">{{ form.date_norm_title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.date_norm_description.label_tag }}
+                            {{ form.date_norm_description }}
+                            <small class="form-text text-muted">{{ form.date_norm_description.help_text }}</small>
+                            {% if form.date_norm_description.errors %}
+                                <div class="text-danger">{{ form.date_norm_description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.date_norm_instructions.label_tag }}
+                            {{ form.date_norm_instructions }}
+                            <small class="form-text text-muted">{{ form.date_norm_instructions.help_text }}</small>
+                            {% if form.date_norm_instructions.errors %}
+                                <div class="text-danger">{{ form.date_norm_instructions.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.date_norm_batch_size.label_tag }}
+                            {{ form.date_norm_batch_size }}
+                            <small class="form-text text-muted">{{ form.date_norm_batch_size.help_text }}</small>
+                            {% if form.date_norm_batch_size.errors %}
+                                <div class="text-danger">{{ form.date_norm_batch_size.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Preview</h4>
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>Instructions Preview</strong>
+                            </div>
+                            <div class="card-body" id="date-norm-instructions-preview">
+                                <em class="text-muted">Instructions will appear here...</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="mt-4">
@@ -221,6 +339,42 @@ $(document).ready(function() {
     if (colInstructions && colInstructions.trim()) {
         const html = marked.parse(colInstructions);
         $('#col-instructions-preview').html(html);
+    }
+
+    // Live preview for tag grouping instructions
+    $('#id_tag_grouping_instructions').on('input', function() {
+        const markdown = $(this).val();
+        if (markdown.trim()) {
+            const html = marked.parse(markdown);
+            $('#tag-grouping-instructions-preview').html(html);
+        } else {
+            $('#tag-grouping-instructions-preview').html('<em class="text-muted">Instructions will appear here...</em>');
+        }
+    });
+
+    // Live preview for date normalization instructions
+    $('#id_date_norm_instructions').on('input', function() {
+        const markdown = $(this).val();
+        if (markdown.trim()) {
+            const html = marked.parse(markdown);
+            $('#date-norm-instructions-preview').html(html);
+        } else {
+            $('#date-norm-instructions-preview').html('<em class="text-muted">Instructions will appear here...</em>');
+        }
+    });
+
+    // Initialize tag grouping preview
+    const tagGroupingInstructions = $('#id_tag_grouping_instructions').val();
+    if (tagGroupingInstructions && tagGroupingInstructions.trim()) {
+        const html = marked.parse(tagGroupingInstructions);
+        $('#tag-grouping-instructions-preview').html(html);
+    }
+
+    // Initialize date normalization preview
+    const dateNormInstructions = $('#id_date_norm_instructions').val();
+    if (dateNormInstructions && dateNormInstructions.trim()) {
+        const html = marked.parse(dateNormInstructions);
+        $('#date-norm-instructions-preview').html(html);
     }
 });
 </script>

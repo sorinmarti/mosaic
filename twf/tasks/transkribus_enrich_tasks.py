@@ -1,4 +1,5 @@
 """Celery tasks for enriching documents with Transkribus API metadata."""
+
 import logging
 
 from celery import shared_task
@@ -28,16 +29,16 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
     Returns:
         dict: Statistics about the enrichment operation
     """
-    force = kwargs.get('force', False)
-    document_ids = kwargs.get('document_ids', None)
+    force = kwargs.get("force", False)
+    document_ids = kwargs.get("document_ids", None)
 
     self.update_progress(5, text="Starting Transkribus API enrichment...")
 
     # Get Transkribus credentials
     try:
-        transkribus_credentials = self.project.get_credentials('transkribus')
-        username = transkribus_credentials.get('username')
-        password = transkribus_credentials.get('password')
+        transkribus_credentials = self.project.get_credentials("transkribus")
+        username = transkribus_credentials.get("username")
+        password = transkribus_credentials.get("password")
         collection_id = self.project.collection_id
 
         if not username or not password or not collection_id:
@@ -58,7 +59,9 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
 
     # Determine which documents to enrich
     if document_ids:
-        documents = Document.objects.filter(project=self.project, document_id__in=document_ids)
+        documents = Document.objects.filter(
+            project=self.project, document_id__in=document_ids
+        )
     else:
         documents = Document.objects.filter(project=self.project)
 
@@ -99,10 +102,10 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
         progress = 25 + ((idx / total_documents) * 70)
 
         # Check if already enriched (unless force is enabled)
-        if not force and doc_instance.metadata.get('transkribus_api'):
+        if not force and doc_instance.metadata.get("transkribus_api"):
             self.update_progress(
                 progress,
-                text=f"[{idx}/{total_documents}] Document {doc_id}: Skipped (already enriched)"
+                text=f"[{idx}/{total_documents}] Document {doc_id}: Skipped (already enriched)",
             )
             skipped_count += 1
             continue
@@ -111,26 +114,30 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
             # Fetch enriched metadata from API
             self.update_progress(
                 progress,
-                text=f"[{idx}/{total_documents}] Document {doc_id}: Fetching metadata..."
+                text=f"[{idx}/{total_documents}] Document {doc_id}: Fetching metadata...",
             )
 
-            enriched_data = api_client.enrich_document_metadata(collection_id, int(doc_id))
+            enriched_data = api_client.enrich_document_metadata(
+                collection_id, int(doc_id)
+            )
 
             if enriched_data:
                 # Update document metadata
                 existing_metadata = doc_instance.metadata or {}
-                if 'transkribus_api' not in existing_metadata:
-                    existing_metadata['transkribus_api'] = {}
+                if "transkribus_api" not in existing_metadata:
+                    existing_metadata["transkribus_api"] = {}
 
-                doc_labels = enriched_data.get('labels', [])
-                existing_metadata['transkribus_api']['labels'] = doc_labels
-                existing_metadata['transkribus_api']['page_labels_available'] = enriched_data.get(
-                    'page_labels_available', []
+                doc_labels = enriched_data.get("labels", [])
+                existing_metadata["transkribus_api"]["labels"] = doc_labels
+                existing_metadata["transkribus_api"]["page_labels_available"] = (
+                    enriched_data.get("page_labels_available", [])
                 )
 
                 # Check for "Exclude" label (same logic as pages)
-                is_excluded = any(label.get('name', '').lower() == 'exclude' for label in doc_labels)
-                existing_metadata['transkribus_api']['is_excluded'] = is_excluded
+                is_excluded = any(
+                    label.get("name", "").lower() == "exclude" for label in doc_labels
+                )
+                existing_metadata["transkribus_api"]["is_excluded"] = is_excluded
 
                 doc_instance.metadata = existing_metadata
 
@@ -141,7 +148,7 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
                 doc_instance.save(current_user=self.user)
 
                 # Update page metadata with labels and exclusion status
-                page_data = enriched_data.get('pages', {})
+                page_data = enriched_data.get("pages", {})
                 doc_pages_updated = 0
                 doc_pages_excluded = 0
 
@@ -150,16 +157,20 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
                         page_instance = doc_instance.pages.get(tk_page_id=page_id)
                         page_metadata = page_instance.metadata or {}
 
-                        if 'transkribus_api' not in page_metadata:
-                            page_metadata['transkribus_api'] = {}
+                        if "transkribus_api" not in page_metadata:
+                            page_metadata["transkribus_api"] = {}
 
-                        page_metadata['transkribus_api']['labels'] = page_info.get('labels', [])
-                        page_metadata['transkribus_api']['is_excluded'] = page_info.get('is_excluded', False)
+                        page_metadata["transkribus_api"]["labels"] = page_info.get(
+                            "labels", []
+                        )
+                        page_metadata["transkribus_api"]["is_excluded"] = page_info.get(
+                            "is_excluded", False
+                        )
 
                         page_instance.metadata = page_metadata
 
                         # Update is_ignored field based on "Exclude" label
-                        if page_info.get('is_excluded', False):
+                        if page_info.get("is_excluded", False):
                             page_instance.is_ignored = True
                             doc_pages_excluded += 1
 
@@ -167,7 +178,9 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
                         doc_pages_updated += 1
 
                     except Page.DoesNotExist:
-                        logger.warning(f"Page {page_id} not found for document {doc_id}")
+                        logger.warning(
+                            f"Page {page_id} not found for document {doc_id}"
+                        )
                     except Exception as e:
                         logger.error(f"Failed to update page {page_id} metadata: {e}")
 
@@ -178,14 +191,14 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
                 self.update_progress(
                     progress,
                     text=f"[{idx}/{total_documents}] Document {doc_id}: "
-                         f"✓ Enriched ({doc_pages_updated} pages, {doc_pages_excluded} excluded)"
+                    f"✓ Enriched ({doc_pages_updated} pages, {doc_pages_excluded} excluded)",
                 )
 
             else:
                 error_count += 1
                 self.update_progress(
                     progress,
-                    text=f"[{idx}/{total_documents}] Document {doc_id}: Failed to fetch metadata"
+                    text=f"[{idx}/{total_documents}] Document {doc_id}: Failed to fetch metadata",
                 )
 
         except Exception as e:
@@ -193,7 +206,7 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
             logger.error(f"Failed to enrich document {doc_id}: {e}")
             self.update_progress(
                 progress,
-                text=f"[{idx}/{total_documents}] Document {doc_id}: Error - {e}"
+                text=f"[{idx}/{total_documents}] Document {doc_id}: Error - {e}",
             )
 
     # Final summary
@@ -215,12 +228,12 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
 
     # Return statistics
     result = {
-        'total': total_documents,
-        'enriched': enriched_count,
-        'skipped': skipped_count,
-        'errors': error_count,
-        'pages_updated': pages_updated,
-        'pages_excluded': pages_excluded
+        "total": total_documents,
+        "enriched": enriched_count,
+        "skipped": skipped_count,
+        "errors": error_count,
+        "pages_updated": pages_updated,
+        "pages_excluded": pages_excluded,
     }
 
     self.end_task(status="SUCCESS" if error_count == 0 else "PARTIAL", result=result)

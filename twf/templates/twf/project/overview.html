@@ -5,8 +5,6 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'twf/project/info_card_project.html' %}
-
     <div class="row mt-3">
         <!-- Project Statistics -->
         <div class="col-md-8">
@@ -145,133 +143,14 @@
             </div>
         </div>
         
-        <!-- Next Steps -->
+        <!-- Recent Tasks -->
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Project Setup</h5>
+                    <h5 class="card-title mb-0">Recent Tasks</h5>
                 </div>
                 <div class="card-body">
-                    {% if steps.all_steps_complete %}
-                        <div class="alert alert-success mb-0">
-                            <i class="fa fa-check-circle me-2"></i> All setup steps completed!
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info mb-4">
-                            <i class="fa fa-info-circle me-2"></i> {{ steps.pending_count }} pending setup steps
-                        </div>
-                        
-                        <div class="setup-steps">
-                            <!-- Transkribus Credentials -->
-                            <div class="d-flex align-items-center mb-3 p-2 {% if steps.transkribus_credentials %}bg-success-subtle{% else %}bg-warning-subtle{% endif %} rounded">
-                                <div class="me-3">
-                                    {% if steps.transkribus_credentials %}
-                                    <i class="fa fa-check-circle text-success fs-4"></i>
-                                    {% else %}
-                                    <i class="fa fa-exclamation-circle text-warning fs-4"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">Transkribus Credentials</h6>
-                                    {% if not steps.transkribus_credentials %}
-                                    <small class="d-block mt-1">
-                                        <a href="{% url 'twf:project_settings_credentials'%}" class="text-decoration-none">
-                                            <i class="fa fa-arrow-right me-1"></i>Configure credentials
-                                        </a>
-                                    </small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Transkribus Export -->
-                            <div class="d-flex align-items-center mb-3 p-2 {% if steps.transkribus_export_present %}bg-success-subtle{% else %}bg-warning-subtle{% endif %} rounded">
-                                <div class="me-3">
-                                    {% if steps.transkribus_export_present %}
-                                    <i class="fa fa-check-circle text-success fs-4"></i>
-                                    {% else %}
-                                    <i class="fa fa-exclamation-circle text-warning fs-4"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">Transkribus Export</h6>
-                                    {% if not steps.transkribus_export_present %}
-                                    <small class="d-block mt-1">
-                                        <a href="{% url 'twf:project_tk_export'%}" class="text-decoration-none">
-                                            <i class="fa fa-arrow-right me-1"></i>Request export
-                                        </a>
-                                    </small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Export Extraction -->
-                            <div class="d-flex align-items-center mb-3 p-2 {% if steps.transkribus_export_extracted %}bg-success-subtle{% else %}bg-warning-subtle{% endif %} rounded">
-                                <div class="me-3">
-                                    {% if steps.transkribus_export_extracted %}
-                                    <i class="fa fa-check-circle text-success fs-4"></i>
-                                    {% else %}
-                                    <i class="fa fa-exclamation-circle text-warning fs-4"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">Extract Export Data</h6>
-                                    {% if not steps.transkribus_export_extracted %}
-                                    <small class="d-block mt-1">
-                                        <a href="{% url 'twf:project_tk_structure'%}" class="text-decoration-none">
-                                            <i class="fa fa-arrow-right me-1"></i>Extract data
-                                        </a>
-                                    </small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Tags Extraction -->
-                            <div class="d-flex align-items-center mb-3 p-2 {% if steps.transkribus_tags_extracted %}bg-success-subtle{% else %}bg-warning-subtle{% endif %} rounded">
-                                <div class="me-3">
-                                    {% if steps.transkribus_tags_extracted %}
-                                    <i class="fa fa-check-circle text-success fs-4"></i>
-                                    {% else %}
-                                    <i class="fa fa-exclamation-circle text-warning fs-4"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">Extract Tags</h6>
-                                    {% if not steps.transkribus_tags_extracted %}
-                                    <small class="d-block mt-1">
-                                        <a href="" class="text-decoration-none">
-                                            <i class="fa fa-arrow-right me-1"></i>Extract tags
-                                        </a>
-                                    </small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Dictionaries -->
-                            <div class="d-flex align-items-center mb-3 p-2 {% if steps.dictionaries_connected %}bg-success-subtle{% else %}bg-warning-subtle{% endif %} rounded">
-                                <div class="me-3">
-                                    {% if steps.dictionaries_connected %}
-                                    <i class="fa fa-check-circle text-success fs-4"></i>
-                                    {% else %}
-                                    <i class="fa fa-exclamation-circle text-warning fs-4"></i>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">Connect Dictionaries</h6>
-                                    {% if not steps.dictionaries_connected %}
-                                    <small class="d-block mt-1">
-                                        <a href="{% url 'twf:dictionaries_add'%}" class="text-decoration-none">
-                                            <i class="fa fa-arrow-right me-1"></i>Add dictionaries
-                                        </a>
-                                    </small>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                    
                     {% if task_stats.recent %}
-                    <div class="mt-4">
-                        <h5 class="mb-3">Recent Tasks</h5>
                         <div class="list-group list-group-flush">
                             {% for task in task_stats.recent %}
                             <a href="{% url 'twf:task_detail' task.id %}" class="list-group-item list-group-item-action px-0">
@@ -292,7 +171,8 @@
                                 View All Tasks
                             </a>
                         </div>
-                    </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No tasks recorded yet.</p>
                     {% endif %}
                 </div>
             </div>

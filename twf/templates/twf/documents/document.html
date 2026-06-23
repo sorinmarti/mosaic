@@ -60,6 +60,12 @@
                 Sync History
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="options-tab" data-bs-toggle="tab" data-bs-target="#options"
+                    type="button" role="tab" aria-controls="options" aria-selected="false">
+                Options
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content mt-3" id="documentTabsContent">
@@ -67,11 +73,6 @@
         <div class="tab-pane fade show active" id="doc-metadata" role="tabpanel" aria-labelledby="doc-metadata-tab">
             <div class="card">
                 <div class="card-body">
-                    <button type="button" class="btn btn-sm btn-outline-primary float-end"
-                            onclick="updatePageMetadata({{ document.document_id }})"
-                            title="Refresh metadata from Transkribus API">
-                        <i class="fa fa-refresh me-1"></i>Update API Metadata
-                    </button>
                     <h5 class="card-title mb-3">Basic Information</h5>
                     <table class="table table-sm">
                         <tr>
@@ -88,6 +89,20 @@
                                 <span class="badge bg-primary">{{ document.pages.count }} total</span>
                                 {% if excluded_count > 0 %}
                                     <span class="badge bg-secondary ms-1">{{ excluded_count }} excluded</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Status</td>
+                            <td>
+                                <span class="badge {% if document.status == 'open' %}bg-secondary{% elif document.status == 'reviewed' %}bg-success{% elif document.status == 'needs_tk_work' %}bg-warning{% endif %}">
+                                    {{ document.get_status_display }}
+                                </span>
+                                {% if document.is_parked %}
+                                    <span class="badge bg-info ms-1" title="Parked">⏸ Parked</span>
+                                {% endif %}
+                                {% if document.is_ignored %}
+                                    <span class="badge bg-dark ms-1" title="Excluded from corpus">✕ Excluded</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -270,6 +285,74 @@
                             No synchronization history available for this document yet.
                         </div>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Options Tab -->
+        <div class="tab-pane fade" id="options" role="tabpanel" aria-labelledby="options-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Document Options</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Update API Metadata Section -->
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Metadata Management</h6>
+                        <button type="button" class="btn btn-outline-primary"
+                                onclick="updatePageMetadata({{ document.document_id }})"
+                                title="Refresh metadata from Transkribus API">
+                            <i class="fa fa-refresh me-1"></i>Update API Metadata
+                        </button>
+                        <p class="text-muted small mt-2">Fetch the latest metadata from Transkribus API for this document.</p>
+                    </div>
+
+                    <!-- Document Status and Remarks Form -->
+                    <form method="POST" action="{% url 'twf:update_document_options' document.pk %}">
+                        {% csrf_token %}
+
+                        <h6 class="border-bottom pb-2 mb-3">Status & Workflow</h6>
+
+                        <!-- Status Selection -->
+                        <div class="mb-3">
+                            <label for="status" class="form-label fw-bold">Document Status</label>
+                            <select class="form-select" id="status" name="status">
+                                {% for value, label in document.STATUS_CHOICES %}
+                                    <option value="{{ value }}" {% if document.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Current status determines how the document is processed in workflows.</div>
+                        </div>
+
+                        <!-- Is Parked Checkbox -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_parked" name="is_parked"
+                                       value="true" {% if document.is_parked %}checked{% endif %}>
+                                <label class="form-check-label" for="is_parked">
+                                    <strong>Parked</strong> - Temporarily exclude from active workflows
+                                </label>
+                            </div>
+                            <div class="form-text">Parked documents are set aside for later processing without being deleted.</div>
+                        </div>
+
+                        <!-- Workflow Remarks -->
+                        <div class="mb-3">
+                            <label for="workflow_remarks" class="form-label fw-bold">Workflow Remarks</label>
+                            <textarea class="form-control" id="workflow_remarks" name="workflow_remarks"
+                                      rows="5" placeholder="Add notes about this document's workflow status...">{{ document.workflow_remarks }}</textarea>
+                            <div class="form-text">Internal notes about review status, issues, or special handling requirements.</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save me-1"></i>Save Options
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

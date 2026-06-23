@@ -6,38 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0066_documentsynchistory'),
+        ("twf", "0066_documentsynchistory"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pagetag',
-            name='length',
+            model_name="pagetag",
+            name="length",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='pagetag',
-            name='line_index_global',
+            model_name="pagetag",
+            name="line_index_global",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='pagetag',
-            name='line_index_in_region',
+            model_name="pagetag",
+            name="line_index_in_region",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='pagetag',
-            name='line_text',
-            field=models.TextField(blank=True, default=''),
+            model_name="pagetag",
+            name="line_text",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AddField(
-            model_name='pagetag',
-            name='offset_in_line',
+            model_name="pagetag",
+            name="offset_in_line",
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='pagetag',
-            name='region_index',
+            model_name="pagetag",
+            name="region_index",
             field=models.IntegerField(default=0),
         ),
     ]

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('twf', '0067_add_pagetag_position_fields'),
+        ("twf", "0067_add_pagetag_position_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='document',
-            name='is_ignored',
+            model_name="document",
+            name="is_ignored",
             field=models.BooleanField(default=False),
         ),
     ]

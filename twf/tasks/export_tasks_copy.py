@@ -1,6 +1,7 @@
 """Celery tasks for exporting data from the project."""
+
 import json
-import csv
+import logging
 import os
 import shutil
 import tempfile
@@ -8,7 +9,6 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 
-import pandas as pd
 from celery import shared_task
 from django.conf import settings
 from django.core.files import File
@@ -17,21 +17,44 @@ from django.core.files.storage import default_storage
 from django.core.serializers import serialize
 from django.utils.text import slugify
 
-from twf.models import Project, Export, Page, PageTag, CollectionItem, DictionaryEntry, Variation, DateVariation
+from twf.models import (
+    Export,
+    Page,
+    PageTag,
+    CollectionItem,
+    DictionaryEntry,
+    Variation,
+    DateVariation,
+)
 from twf.tasks.task_base import BaseTWFTask
 from twf.utils.create_export_utils import create_data
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, base=BaseTWFTask)
 def export_documents_task(self, project_id, user_id, **kwargs):
-    print(kwargs)
-    self.validate_task_parameters(kwargs, ['export_type', 'export_single_file'])
+    """
+    Export documents or pages from a project to JSON files.
+
+    Args:
+        self: Celery task instance
+        project_id: ID of the project to export
+        user_id: ID of the user performing the export
+        **kwargs: Additional parameters including:
+            - export_type: "documents" or "pages"
+            - export_single_file: bool, whether to create one file per item or combine all
+
+    Returns:
+        None (creates Export object with downloadable file)
+    """
+    self.validate_task_parameters(kwargs, ["export_type", "export_single_file"])
 
     docs_to_export = self.project.documents.all()
     self.set_total_items(docs_to_export.count())
 
-    export_type = kwargs.get('export_type')
-    export_single_file = kwargs.get('export_single_file')
+    export_type = kwargs.get("export_type")
+    export_single_file = kwargs.get("export_single_file")
 
     # 1st step: Create a temporary directory
     temp_dir = tempfile.mkdtemp()
@@ -70,7 +93,9 @@ def export_documents_task(self, project_id, user_id, **kwargs):
         # 3rd step: Store the final result
         if export_single_file:
             zip_filename = f"export_{self.project.id}.zip"
-            zip_filepath = shutil.make_archive(zip_filename.replace(".zip", ""), "zip", temp_dir)
+            zip_filepath = shutil.make_archive(
+                zip_filename.replace(".zip", ""), "zip", temp_dir
+            )
             result_filepath = zip_filepath
         else:
             export_filename = f"export_{self.project.id}.json"
@@ -95,11 +120,10 @@ def export_documents_task(self, project_id, user_id, **kwargs):
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
-
     export_instance = Export(
         project=self.project,
         export_file=saved_filename,  # Save the path to the file
-        export_type=export_type
+        export_type=export_type,
     )
     export_instance.save(current_user=self.user)
 
@@ -110,8 +134,26 @@ def export_documents_task(self, project_id, user_id, **kwargs):
 
 @shared_task(bind=True, base=BaseTWFTask)
 def export_project_task(self, project_id, user_id, **kwargs):
-    self.validate_task_parameters(kwargs,
-                                  ['include_dictionaries', 'include_media_files'])
+    """
+    Export complete project data including all related models to a ZIP file.
+
+    Creates a comprehensive export containing project data, documents, pages, tags,
+    collections, prompts, workflows, and optionally dictionaries and media files.
+
+    Args:
+        self: Celery task instance
+        project_id: ID of the project to export
+        user_id: ID of the user performing the export
+        **kwargs: Additional parameters including:
+            - include_dictionaries: bool, whether to include dictionary data
+            - include_media_files: bool, whether to include ZIP and XML files
+
+    Returns:
+        None (creates Export object with downloadable ZIP file)
+    """
+    self.validate_task_parameters(
+        kwargs, ["include_dictionaries", "include_media_files"]
+    )
     include_dictionaries = kwargs.get("include_dictionaries", True)
     include_media_files = kwargs.get("include_media_files", True)
 
@@ -158,14 +200,18 @@ def export_project_task(self, project_id, user_id, **kwargs):
         # Media files: downloaded ZIP and page XMLs
         if include_media_files:
             if project.downloaded_zip_file:
-                zip_file.writestr(f"media/{os.path.basename(project.downloaded_zip_file.name)}",
-                                  project.downloaded_zip_file.read())
+                zip_file.writestr(
+                    f"media/{os.path.basename(project.downloaded_zip_file.name)}",
+                    project.downloaded_zip_file.read(),
+                )
 
             for page in pages:
                 if page.xml_file and page.xml_file.name:
                     try:
-                        zip_file.writestr(f"media/{os.path.basename(page.xml_file.name)}",
-                                          page.xml_file.read())
+                        zip_file.writestr(
+                            f"media/{os.path.basename(page.xml_file.name)}",
+                            page.xml_file.read(),
+                        )
                     except Exception as e:
                         pass  # Log this if needed
 
@@ -181,12 +227,24 @@ def export_project_task(self, project_id, user_id, **kwargs):
     )
     export.save(current_user=self.user)
 
-    self.end_task(text="Export finished", status="SUCCESS",
-                  download_url=export.export_file.url)
+    self.end_task(
+        text="Export finished", status="SUCCESS", download_url=export.export_file.url
+    )
 
 
 @shared_task(bind=True, base=BaseTWFTask)
 def export_to_zenodo_task(self, project_id, user_id, **kwargs):
+    """
+    Export project data to Zenodo repository.
 
-    export_type = 'sql' # Can be 'sql' or 'json'
+    Args:
+        self: Celery task instance
+        project_id: ID of the project to export
+        user_id: ID of the user performing the export
+        **kwargs: Additional keyword arguments
+
+    Returns:
+        None (ends task immediately - placeholder implementation)
+    """
+    export_type = "sql"  # Can be 'sql' or 'json'
     self.end_task()

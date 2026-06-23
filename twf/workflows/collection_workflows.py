@@ -4,6 +4,7 @@ from django.shortcuts import redirect, get_object_or_404
 from twf.models import Workflow, Document, CollectionItem, Collection
 from twf.tasks.instant_tasks import start_related_task
 from twf.views.views_base import TWFView
+from twf.workflows.workflow_utils import end_workflow
 
 
 def create_collection_workflow(project, user, collection, item_count=None):
@@ -23,14 +24,14 @@ def create_collection_workflow(project, user, collection, item_count=None):
     """
     # Use configured batch size if item_count not provided
     if item_count is None:
-        workflow_def = project.get_workflow_definition('review_collection')
-        item_count = workflow_def.get('batch_size', 5)
+        workflow_def = project.get_workflow_definition("review_collection")
+        item_count = workflow_def.get("batch_size", 5)
 
     # Get available collection item IDs that are not reserved and not reviewed
     available_collection_item_ids = list(
-        CollectionItem.objects.filter(collection=collection,
-                                      is_reserved=False, status='open')
-        .values_list('id', flat=True)[:item_count]
+        CollectionItem.objects.filter(
+            collection=collection, is_reserved=False, status="open"
+        ).values_list("id", flat=True)[:item_count]
     )
 
     if len(available_collection_item_ids) == 0:
@@ -40,28 +41,47 @@ def create_collection_workflow(project, user, collection, item_count=None):
         item_count = len(available_collection_item_ids)
 
     # Mark the documents as reserved
-    CollectionItem.objects.filter(id__in=available_collection_item_ids).update(is_reserved=True)
+    CollectionItem.objects.filter(id__in=available_collection_item_ids).update(
+        is_reserved=True
+    )
 
-    task = start_related_task(project, user,
-                              "Review Collection",
-                              "Review collection items a collection in the project.",
-                              "The user has started a workflow to review documents.")
+    task = start_related_task(
+        project,
+        user,
+        "Review Collection",
+        "Review collection items a collection in the project.",
+        "The user has started a workflow to review documents.",
+    )
 
     # Create the workflow
     workflow = Workflow.objects.create(
         project=project,
         collection=collection,
         user=user,
-        workflow_type='review_collection',
+        workflow_type="review_collection",
         item_count=item_count,
-        related_task=task
+        related_task=task,
     )
 
+    # Initialize workflow_steps in the related task
+    if task:
+        task.workflow_steps = {
+            "current_step": 0,
+            "total_steps": item_count,
+            "steps": [],
+            "workflow_type": "review_collection",
+            "collection_id": collection.id,
+            "collection_title": collection.title,
+            "started_at": task.start_time.isoformat() if task.start_time else None
+        }
+        task.save(update_fields=["workflow_steps"])
+
     # Assign documents to the workflow
-    workflow.assigned_collection_items.set(CollectionItem.objects.filter(id__in=available_collection_item_ids))
+    workflow.assigned_collection_items.set(
+        CollectionItem.objects.filter(id__in=available_collection_item_ids)
+    )
 
     return True
-
 
 
 def start_review_collection_workflow(request, collection_id):
@@ -71,9 +91,21 @@ def start_review_collection_workflow(request, collection_id):
     collection = Collection.objects.get(pk=collection_id)
 
     # Use None to let create_collection_workflow use the configured batch size
-    started_workflow = create_collection_workflow(project, user, collection, item_count=None)
+    started_workflow = create_collection_workflow(
+        project, user, collection, item_count=None
+    )
     if not started_workflow:
         messages.error(request, "No items available for review.")
-        return redirect('twf:collections_review')
+        return redirect("twf:collections_review")
 
-    return redirect('twf:collections_review')
+    return redirect("twf:collections_review")
+
+
+def end_review_collection_workflow(request):
+    """End/cancel the current collection review workflow."""
+    project = TWFView.s_get_project(request)
+    user = request.user
+
+    end_workflow(request, project, user, "review_collection", "twf:collections_review")
+
+    return redirect("twf:collections_review")

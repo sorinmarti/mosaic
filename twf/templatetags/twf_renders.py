@@ -31,18 +31,22 @@ def render_metadata(obj_with_metadata):
         tab_id = f"{unique_prefix}-{key}-tab"
         pane_id = f"{unique_prefix}-{key}"
 
-        tab_headers += f"<li class='nav-item' role='presentation'>"
-        tab_headers += f"<button class='nav-link {active_class}' id='{tab_id}' data-bs-toggle='tab' data-bs-target='#{pane_id}' type='button' role='tab' aria-controls='{pane_id}' aria-selected='true'>{key}</button>"
+        tab_headers += "<li class='nav-item' role='presentation'>"
+        tab_headers += (f"<button class='nav-link {active_class}' id='{tab_id}' "
+                        f"data-bs-toggle='tab' data-bs-target='#{pane_id}' type='button' "
+                        f"role='tab' aria-controls='{pane_id}' aria-selected='true'>{key}</button>")
         tab_headers += f"""<button class='btn btn-sm btn-circle btn-delete show-danger-modal ms-1'
                                   title='Delete entire "{key}" section'
-                                  data-message='Are you sure you want to delete the entire metadata section "{key}"?'
+                                  data-message='Are you sure you want to delete 
+                                  the entire metadata section "{key}"?'
                                   data-start-url='/metadata/delete/{obj_type}/{obj_id}/{key}/'
                                   data-delete-base-key='{key}'>
                               <i class='fas fa-trash'></i>
                           </button>"""
         tab_headers += "</li>"
 
-        tab_contents += f"<div class='tab-pane fade {show_class}' id='{pane_id}' role='tabpanel' aria-labelledby='{tab_id}'>"
+        tab_contents += (f"<div class='tab-pane fade {show_class}' id='{pane_id}' "
+                         f"role='tabpanel' aria-labelledby='{tab_id}'>")
         tab_contents += f"{render_metadata_content(key, obj_type, obj_id, value)}"
         tab_contents += "</div>"
 
@@ -69,8 +73,9 @@ def render_metadata_content(base_key, obj_type, obj_id, metadata, parent_key=Non
             edit_button = ""
             full_key = f"{parent_key}.{key}" if parent_key else key
 
-            if  not isinstance(value, dict) and not isinstance(value, list):
-                edit_button = f"""<button class='btn btn-sm btn-circle btn-edit' onclick='editMetadata("{base_key}", "{obj_type}", "{obj_id}", "{full_key}")' title='Edit'>
+            if not isinstance(value, dict) and not isinstance(value, list):
+                edit_button = f"""<button class='btn btn-sm btn-circle btn-edit' 
+                onclick='editMetadata("{base_key}", "{obj_type}", "{obj_id}", "{full_key}")' title='Edit'>
                     <i class="fas fa-edit"></i>
                 </button>"""
 
@@ -84,7 +89,9 @@ def render_metadata_content(base_key, obj_type, obj_id, metadata, parent_key=Non
                     <i class="fas fa-trash"></i>
                 </button>
                 <strong>{key}:</strong> 
-                <span id="metadata-value-{full_key}">{render_metadata_content(base_key, obj_type, obj_id, value, full_key)}</span>
+                <span id="metadata-value-{full_key}">
+                  {render_metadata_content(base_key, obj_type, obj_id, value, full_key)}
+                </span>
             </li>
             """
         html_render += "</ul>"
@@ -106,5 +113,3 @@ def render_metadata_content(base_key, obj_type, obj_id, metadata, parent_key=Non
         """
 
     return html_render
-
-
