@@ -50,6 +50,16 @@ def render_metadata(obj_with_metadata):
         tab_contents += (f"<div class='tab-pane fade {show_class}' id='{pane_id}' "
                          f"role='tabpanel' aria-labelledby='{tab_id}'>")
         tab_contents += f"{render_metadata_content(key, obj_type, obj_id, value)}"
+        # Inline mini-map for blocks that carry coordinates
+        if isinstance(value, dict) and value.get('lat') and value.get('lng'):
+            lat = value['lat']
+            lng = value['lng']
+            name = value.get('name', key)
+            tab_contents += (
+                f"<div class='geo-mini-map mt-2' id='map-{pane_id}' "
+                f"data-lat='{lat}' data-lng='{lng}' data-label='{name}' "
+                f"style='height:180px;border-radius:6px;overflow:hidden;'></div>"
+            )
         tab_contents += "</div>"
 
         first = False

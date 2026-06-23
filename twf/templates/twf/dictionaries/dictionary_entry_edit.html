@@ -356,6 +356,34 @@
 {% block script %}
 <script src="{% static 'twf/js/handle_metadata.js' %}"></script>
 <script>
+    // Initialise all geo-mini-map divs (rendered by twf_renders.py)
+    const _geoMaps = {};  // el.id → Leaflet map instance
+    function initGeoMaps() {
+        document.querySelectorAll('.geo-mini-map').forEach(function(el) {
+            if (_geoMaps[el.id]) return; // already initialised
+            const lat   = parseFloat(el.dataset.lat);
+            const lng   = parseFloat(el.dataset.lng);
+            const label = el.dataset.label || '';
+            if (isNaN(lat) || isNaN(lng)) return;
+            const map = L.map(el, { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 18,
+            }).addTo(map);
+            L.marker([lat, lng]).addTo(map).bindPopup(label).openPopup();
+            _geoMaps[el.id] = map;
+        });
+    }
+    // Run on load and whenever a tab becomes visible (Leaflet needs size recalc)
+    document.addEventListener('DOMContentLoaded', initGeoMaps);
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(btn) {
+        btn.addEventListener('shown.bs.tab', function() {
+            initGeoMaps();
+            Object.values(_geoMaps).forEach(m => m.invalidateSize());
+        });
+    });
+</script>
+<script>
     const ENTRY_ID = "{{ entry.pk }}";
     const CSRF_TOKEN = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || "";
 
