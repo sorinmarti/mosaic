@@ -1,8 +1,20 @@
 """Render custom filters for the table."""
+import json
 
 from django import template
 
 register = template.Library()
+
+
+@register.filter
+def pprint_json(value):
+    """Pretty-print a dict/list as formatted JSON for use in a textarea."""
+    if value is None:
+        return "{}"
+    try:
+        return json.dumps(value, indent=2, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return str(value)
 
 
 @register.inclusion_tag("twf/tables/filter_form.html")

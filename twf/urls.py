@@ -5,7 +5,13 @@ from django.contrib.auth import views as auth_views
 
 from twf.tasks.task_status import task_status_view
 from twf.tasks.task_triggers import *
-from twf.tasks.task_triggers import start_test_ai_config
+from twf.tasks.task_triggers import (
+    start_test_ai_config,
+    start_enrich_entry_geonames,
+    start_enrich_entry_gnd,
+    start_enrich_entry_wikidata,
+    start_enrich_entry_ai,
+)
 from twf.views.ajax.views_ajax_field_validation import (
     validate_page_field,
     validate_document_field,
@@ -55,6 +61,13 @@ from twf.views.dictionaries.views_crud import (
     skip_entry,
     delete_variation,
     delete_dictionary_entry,
+    update_dictionary_entry_metadata,
+    delete_dictionary_entry_metadata,
+    save_entry_metadata_json,
+    search_entry_geonames,
+    search_entry_gnd,
+    search_entry_wikidata,
+    save_entry_lookup,
 )
 from twf.views.documents.views_crud import (
     update_document_metadata,
@@ -640,6 +653,31 @@ urlpatterns = [
         name="dictionaries_entry_delete",
     ),
     path(
+        "dictionaries/entry/<int:pk>/metadata/json/",
+        save_entry_metadata_json,
+        name="dictionaries_entry_save_json",
+    ),
+    path(
+        "dictionaries/entry/<int:pk>/search/geonames/",
+        search_entry_geonames,
+        name="search_entry_geonames",
+    ),
+    path(
+        "dictionaries/entry/<int:pk>/search/gnd/",
+        search_entry_gnd,
+        name="search_entry_gnd",
+    ),
+    path(
+        "dictionaries/entry/<int:pk>/search/wikidata/",
+        search_entry_wikidata,
+        name="search_entry_wikidata",
+    ),
+    path(
+        "dictionaries/entry/<int:pk>/lookup/save/",
+        save_entry_lookup,
+        name="save_entry_lookup",
+    ),
+    path(
         "dictionaries/normalization/wizard/",
         TWFDictionaryNormDataView.as_view(),
         name="dictionaries_normalization",
@@ -991,6 +1029,27 @@ urlpatterns = [
         start_dictionaries_request_unified,
         name="task_dictionaries_request_unified",
     ),
+    # Single-entry enrichment task triggers
+    path(
+        "celery/dictionaries/entry/enrich/geonames/",
+        start_enrich_entry_geonames,
+        name="task_enrich_entry_geonames",
+    ),
+    path(
+        "celery/dictionaries/entry/enrich/gnd/",
+        start_enrich_entry_gnd,
+        name="task_enrich_entry_gnd",
+    ),
+    path(
+        "celery/dictionaries/entry/enrich/wikidata/",
+        start_enrich_entry_wikidata,
+        name="task_enrich_entry_wikidata",
+    ),
+    path(
+        "celery/dictionaries/entry/enrich/ai/",
+        start_enrich_entry_ai,
+        name="task_enrich_entry_ai",
+    ),
     # Unified AI batch task trigger
     path(
         "celery/collections/batch/ai/",
@@ -1117,6 +1176,16 @@ urlpatterns = [
         "metadata/delete/collection-item/<int:pk>/<str:base_key>/",
         delete_collection_item_metadata,
         name="update_collection_item_metadata",
+    ),
+    path(
+        "metadata/update/dictionaryentry/<int:pk>/<str:base_key>/",
+        update_dictionary_entry_metadata,
+        name="update_dictionary_entry_metadata",
+    ),
+    path(
+        "metadata/delete/dictionaryentry/<int:pk>/<str:base_key>/",
+        delete_dictionary_entry_metadata,
+        name="delete_dictionary_entry_metadata",
     ),
     path("validate_page_field/", validate_page_field, name="validate_page_field"),
     path(

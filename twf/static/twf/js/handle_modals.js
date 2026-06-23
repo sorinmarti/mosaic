@@ -40,8 +40,43 @@ $(document).ready(function () {
       taskFunction = () => (window.location.href = redirectUrl); // Redirect to the specified URL
     }
     if (startTaskUrl) {
-      // Delete the metadata key from entry
-      if(button.data('delete-md-key')) {
+      // Delete an entire metadata block (tab)
+      if (button.data('delete-base-key')) {
+        const paneId = button.data('tab-pane-id');
+        const headerId = button.data('tab-header-id');
+
+        taskFunction = () => {
+          fetch(startTaskUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({}),
+          })
+          .then(response => response.json())
+          .then(() => {
+            // Remove tab pane
+            const pane = document.getElementById(paneId);
+            if (pane) pane.remove();
+            // Remove tab header <li>
+            const header = document.getElementById(headerId);
+            if (header) header.closest('li').remove();
+            else button.closest('li').remove();
+            // Sync raw JSON textarea if present
+            const textarea = document.getElementById('raw-json-textarea');
+            if (textarea) {
+              try {
+                const json = JSON.parse(textarea.value);
+                delete json[button.data('delete-base-key')];
+                textarea.value = JSON.stringify(json, null, 2);
+              } catch (e) { /* leave textarea as-is if unparseable */ }
+            }
+          });
+        };
+      }
+      // Delete a single metadata key from entry
+      else if (button.data('delete-md-key')) {
         const key = button.data('delete-md-key');
 
         taskFunction = () => {

@@ -384,6 +384,55 @@ def start_dictionaries_request_unified(request):
     )
 
 
+def start_enrich_entry_geonames(request):
+    """Trigger a single-entry Geonames enrichment from the entry edit page."""
+    entry_id = request.POST.get('entry_id')
+    country_restriction = request.POST.get('only_search_in', '')
+    similarity_threshold = request.POST.get('similarity_threshold', 80)
+    return trigger_task(request, search_geonames_entry,
+                        entry_id=entry_id,
+                        country_restriction=country_restriction,
+                        similarity_threshold=similarity_threshold)
+
+
+def start_enrich_entry_gnd(request):
+    """Trigger a single-entry GND enrichment from the entry edit page."""
+    entry_id = request.POST.get('entry_id')
+    earliest_birth_year = request.POST.get('earliest_birth_year', None) or None
+    latest_birth_year = request.POST.get('latest_birth_year', None) or None
+    show_empty = request.POST.get('show_empty', False) == 'on'
+    if earliest_birth_year:
+        earliest_birth_year = int(earliest_birth_year)
+    if latest_birth_year:
+        latest_birth_year = int(latest_birth_year)
+    return trigger_task(request, search_gnd_entry,
+                        entry_id=entry_id,
+                        earliest_birth_year=earliest_birth_year,
+                        latest_birth_year=latest_birth_year,
+                        show_empty=show_empty)
+
+
+def start_enrich_entry_wikidata(request):
+    """Trigger a single-entry Wikidata enrichment from the entry edit page."""
+    entry_id = request.POST.get('entry_id')
+    entity_type = request.POST.get('entity_type', 'person')
+    language = request.POST.get('language', 'en')
+    return trigger_task(request, search_wikidata_entry,
+                        entry_id=entry_id,
+                        entity_type=entity_type,
+                        language=language)
+
+
+def start_enrich_entry_ai(request):
+    """Trigger a single-entry AI enrichment from the entry edit page."""
+    from twf.tasks.dictionary_tasks import search_ai_entry
+    entry_id = request.POST.get('entry_id')
+    ai_configuration_id = request.POST.get('ai_configuration')
+    return trigger_ai_task(request, search_ai_entry,
+                           entry_id=entry_id,
+                           ai_configuration_id=ai_configuration_id)
+
+
 ##############################
 ## DOCUMENT TASKS
 def start_documents_batch_unified(request):

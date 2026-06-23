@@ -37,10 +37,12 @@ def render_metadata(obj_with_metadata):
                         f"role='tab' aria-controls='{pane_id}' aria-selected='true'>{key}</button>")
         tab_headers += f"""<button class='btn btn-sm btn-circle btn-delete show-danger-modal ms-1'
                                   title='Delete entire "{key}" section'
-                                  data-message='Are you sure you want to delete 
+                                  data-message='Are you sure you want to delete
                                   the entire metadata section "{key}"?'
                                   data-start-url='/metadata/delete/{obj_type}/{obj_id}/{key}/'
-                                  data-delete-base-key='{key}'>
+                                  data-delete-base-key='{key}'
+                                  data-tab-pane-id='{pane_id}'
+                                  data-tab-header-id='{tab_id}'>
                               <i class='fas fa-trash'></i>
                           </button>"""
         tab_headers += "</li>"
