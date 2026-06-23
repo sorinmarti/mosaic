@@ -10,6 +10,7 @@ class DocumentTable(tables.Table):
     num_tags = tables.Column(verbose_name="Tags", empty_values=[])
     num_blocks = tables.Column(verbose_name="Blocks", empty_values=[])
     title_metadata = tables.Column(verbose_name="Title / Metadata", orderable=False, empty_values=[])
+    status = tables.Column(verbose_name="Status", orderable=True, empty_values=[])
     actions = tables.TemplateColumn(
         verbose_name='Options',
         template_code="""
@@ -71,7 +72,36 @@ class DocumentTable(tables.Table):
 
         return format_html("<strong>{}</strong><br>{}", title, badges)
 
+    def render_status(self, record):
+        """Render the document status with a colored badge."""
+        status = record.status
+        status_display = record.get_status_display()
+
+        # Define badge colors based on status
+        badge_class = {
+            'open': 'bg-secondary',
+            'needs_tk_work': 'bg-warning',
+            'reviewed': 'bg-success',
+            'irrelevant': 'bg-danger',  # Legacy status
+        }.get(status, 'bg-secondary')
+
+        # Add additional indicators
+        indicators = []
+        if record.is_parked:
+            indicators.append('<span class="badge bg-info" title="Parked">⏸</span>')
+        if record.is_ignored:
+            indicators.append('<span class="badge bg-dark" title="Ignored">✕</span>')
+
+        indicators_html = ' '.join(indicators)
+
+        return format_html(
+            '<span class="badge {}">{}</span> {}',
+            badge_class,
+            status_display,
+            indicators_html
+        )
+
     class Meta:
         model = Document
         template_name = "django_tables2/bootstrap4.html"
-        fields = ("id", "title_metadata", "num_pages", "num_tags", "num_blocks", "actions")
+        fields = ("id", "title_metadata", "status", "num_pages", "num_tags", "num_blocks", "actions")

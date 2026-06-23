@@ -77,6 +77,8 @@ class TagFilter(django_filters.FilterSet):
         """Filter for resolved/unresolved tags."""
         if value:  # If checkbox is checked, show only resolved tags
             # Tags with dictionary entries or date variations are considered resolved
+            # Note: Using Q objects for database-level filtering (more efficient than loading
+            # all objects and calling is_resolved() method)
             return queryset.filter(
                 Q(dictionary_entry__isnull=False) | Q(date_variation_entry__isnull=False)
             )
@@ -94,7 +96,11 @@ class DocumentFilter(django_filters.FilterSet):
         empty_label="All Statuses"
     )
     is_parked = django_filters.BooleanFilter(
-        label="Show ignored documents only",
+        label="Show parked documents only",
+        widget=CheckboxInput()
+    )
+    is_ignored = django_filters.BooleanFilter(
+        label="Show excluded documents only",
         widget=CheckboxInput()
     )
     has_pages = django_filters.BooleanFilter(
@@ -106,7 +112,7 @@ class DocumentFilter(django_filters.FilterSet):
     class Meta:
         """Meta class for the document filter."""
         model = Document
-        fields = ['document_id', 'title', 'status', 'is_parked', 'has_pages']
+        fields = ['document_id', 'title', 'status', 'is_parked', 'is_ignored', 'has_pages']
         
     def filter_has_pages(self, queryset, name, value):
         """Filter documents that have pages."""

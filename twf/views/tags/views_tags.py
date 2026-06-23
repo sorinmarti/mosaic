@@ -368,7 +368,7 @@ class TWFProjectTagsView(SingleTableMixin, FilterView, TWFTagsView):
                     'Tag Date Variation': item.date_variation_entry.edtf_of_normalized_variation
                         if item.date_variation_entry else '',
                     'Tag Is Parked': item.is_parked,
-                    'Tag Is Resolved': item.dictionary_entry is not None or item.date_variation_entry is not None
+                    'Tag Is Resolved': item.is_resolved()
                 })
 
             df = pd.DataFrame(result)
@@ -441,6 +441,8 @@ class TWFProjectTagsView(SingleTableMixin, FilterView, TWFTagsView):
         excluded_types = get_excluded_types(project)
 
         # Tag statistics for the header
+        # Note: Using Q objects for database-level filtering (more efficient than
+        # loading all objects and calling is_resolved() method)
         stats = {
             'total': all_tags.exclude(variation_type__in=excluded_types).count(),
             'resolved': all_tags.exclude(variation_type__in=excluded_types).filter(
@@ -470,6 +472,7 @@ class TWFProjectTagsOpenView(TWFProjectTagsView):
         excluded = get_excluded_types(project)
         queryset = self.model.objects.filter(page__document__project=project,
                                              dictionary_entry=None,
+                                             date_variation_entry=None,
                                              is_parked=False).exclude(variation_type__in=excluded)
         self.filterset = self.filterset_class(self.request.GET, queryset=queryset,
                                               project=project,

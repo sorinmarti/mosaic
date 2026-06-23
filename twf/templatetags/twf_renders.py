@@ -20,11 +20,19 @@ def render_metadata(obj_with_metadata):
     obj_id = obj_with_metadata.id
     obj_type = obj_with_metadata.__class__.__name__.lower()
 
+    # Create unique ID prefix for this object's metadata tabs
+    unique_prefix = f"{obj_type}-{obj_id}"
+
     for key, value in obj_with_metadata.metadata.items():
         active_class = "active" if first else ""
         show_class = "show active" if first else ""
+
+        # Create unique IDs for tabs using the unique prefix
+        tab_id = f"{unique_prefix}-{key}-tab"
+        pane_id = f"{unique_prefix}-{key}"
+
         tab_headers += f"<li class='nav-item' role='presentation'>"
-        tab_headers += f"<button class='nav-link {active_class}' id='{key}-tab' data-bs-toggle='tab' data-bs-target='#{key}' type='button' role='tab' aria-controls='{key}' aria-selected='true'>{key}</button>"
+        tab_headers += f"<button class='nav-link {active_class}' id='{tab_id}' data-bs-toggle='tab' data-bs-target='#{pane_id}' type='button' role='tab' aria-controls='{pane_id}' aria-selected='true'>{key}</button>"
         tab_headers += f"""<button class='btn btn-sm btn-circle btn-delete show-danger-modal ms-1'
                                   title='Delete entire "{key}" section'
                                   data-message='Are you sure you want to delete the entire metadata section "{key}"?'
@@ -34,17 +42,17 @@ def render_metadata(obj_with_metadata):
                           </button>"""
         tab_headers += "</li>"
 
-        tab_contents += f"<div class='tab-pane fade {show_class}' id='{key}' role='tabpanel' aria-labelledby='{key}-tab'>"
+        tab_contents += f"<div class='tab-pane fade {show_class}' id='{pane_id}' role='tabpanel' aria-labelledby='{tab_id}'>"
         tab_contents += f"{render_metadata_content(key, obj_type, obj_id, value)}"
         tab_contents += "</div>"
 
         first = False
 
     html_render = f"""
-    <ul class='nav nav-tabs' id='metadataTabs' role='tablist'>
+    <ul class='nav nav-tabs' id='metadataTabs-{unique_prefix}' role='tablist'>
         {tab_headers}
     </ul>
-    <div class='tab-content' id='metadataTabsContent'>
+    <div class='tab-content' id='metadataTabsContent-{unique_prefix}'>
         {tab_contents}
     </div>
     """

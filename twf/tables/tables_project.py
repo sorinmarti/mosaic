@@ -204,14 +204,14 @@ class ProjectUserTable(tables.Table):
 
         # Check if user is a superuser
         if record.user.is_superuser:
-            return format_html('<span class="badge bg-dark">Superuser</span>')
+            return format_html('<span class="badge bg-dark">{}</span>', 'Superuser')
 
         # Check if user is the project owner
         if self.project.owner == record:
-            return format_html('<span class="badge bg-primary">Owner</span>')
+            return format_html('<span class="badge bg-primary">{}</span>', 'Owner')
 
         # Otherwise, user is a member
-        return format_html('<span class="badge bg-secondary">Member</span>')
+        return format_html('<span class="badge bg-secondary">{}</span>', 'Member')
 
     def render_role(self, record):
         """Render the role with appropriate styling."""

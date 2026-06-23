@@ -21,7 +21,8 @@ from twf.views.dictionaries.views_dictionaries_ai import TWFDictionaryGNDBatchVi
     TWFDictionaryWikidataRequestView, \
     TWFUnifiedDictionaryAIBatchView, TWFUnifiedDictionaryAIRequestView
 from twf.views.dictionaries.views_crud import remove_dictionary_from_project, add_dictionary_to_project, skip_entry, \
-    delete_variation, delete_dictionary_entry
+    delete_variation, delete_dictionary_entry, update_dictionary_entry_metadata, delete_dictionary_entry_metadata, \
+    save_entry_metadata_json, search_entry_geonames, search_entry_gnd, search_entry_wikidata, save_entry_lookup
 from twf.views.documents.views_crud import update_document_metadata, delete_document_metadata
 from twf.views.documents.views_documents import TWFDocumentsOverviewView, TWFDocumentsBrowseView, \
     TWFDocumentNameView, TWFDocumentDetailView, TWFDocumentReviewView, TWFDocumentsSearchView
@@ -60,7 +61,7 @@ from twf.views.project.views_project import TWFProjectQueryView, TWFProjectOverv
     TWFProjectResetView, TWFProjectUserManagementView, TWFProjectRepositorySettingsView, TWFProjectPromptEditView, \
     TWFProjectSetupView, TWFProjectTranskribusExtractView, TWFProjectTranskribusEnrichView, TWFProjectNotesView, \
     TWFProjectPromptDetailView, TWFProjectNoteEditView, TWFProjectNoteDetailView, TWFProjectPromptSettingsView, \
-    TWFProjectDisplaySettingsView
+    TWFProjectDisplaySettingsView, TWFProjectWorkflowSettingsView
 from twf.views.project.views_project_ai import TWFUnifiedAIQueryView
 from twf.views.tags.views_tags import TWFProjectTagsView, TWFProjectTagsOpenView, \
     TWFProjectTagsParkedView, TWFProjectTagsResolvedView, TWFProjectTagsIgnoredView, TWFTagsDatesGroupView, \
@@ -143,6 +144,7 @@ urlpatterns = [
     path('project/settings/repositories/', TWFProjectRepositorySettingsView.as_view(),
          name='project_settings_repository'),
     path('project/settings/display/', TWFProjectDisplaySettingsView.as_view(), name='project_settings_display'),
+    path('project/settings/workflows/', TWFProjectWorkflowSettingsView.as_view(), name='project_settings_workflows'),
     path('project/user/management/', TWFProjectUserManagementView.as_view(), name='user_management'),
     # Redirect permissions URL to the user management view
     path('project/permissions/', TWFProjectUserManagementView.as_view(), name='user_roles'),
@@ -358,9 +360,23 @@ urlpatterns = [
 
     path('metadata/update/document/<int:pk>/<str:base_key>/', update_document_metadata, name='update_document_metadata'),
     path('metadata/update/collection-item/<int:pk>/<str:base_key>/', update_collection_item_metadata, name='update_collection_item_metadata'),
+    path('metadata/update/dictionaryentry/<int:pk>/<str:base_key>/', update_dictionary_entry_metadata, name='update_dictionary_entry_metadata'),
 
     path('metadata/delete/document/<int:pk>/<str:base_key>/', delete_document_metadata, name='update_document_metadata'),
     path('metadata/delete/collection-item/<int:pk>/<str:base_key>/', delete_collection_item_metadata, name='update_collection_item_metadata'),
+    path('metadata/delete/dictionaryentry/<int:pk>/<str:base_key>/', delete_dictionary_entry_metadata, name='delete_dictionary_entry_metadata'),
+
+    path('dictionaries/entry/<int:pk>/metadata/json/', save_entry_metadata_json, name='dictionaries_entry_save_json'),
+
+    path('celery/dictionaries/entry/enrich/geonames/', start_enrich_entry_geonames, name='task_enrich_entry_geonames'),
+    path('celery/dictionaries/entry/enrich/gnd/', start_enrich_entry_gnd, name='task_enrich_entry_gnd'),
+    path('celery/dictionaries/entry/enrich/wikidata/', start_enrich_entry_wikidata, name='task_enrich_entry_wikidata'),
+    path('celery/dictionaries/entry/enrich/ai/', start_enrich_entry_ai, name='task_enrich_entry_ai'),
+
+    path('dictionaries/entry/<int:pk>/search/geonames/', search_entry_geonames, name='search_entry_geonames'),
+    path('dictionaries/entry/<int:pk>/search/gnd/', search_entry_gnd, name='search_entry_gnd'),
+    path('dictionaries/entry/<int:pk>/search/wikidata/', search_entry_wikidata, name='search_entry_wikidata'),
+    path('dictionaries/entry/<int:pk>/lookup/save/', save_entry_lookup, name='save_entry_lookup'),
 
     path('validate_page_field/', validate_page_field, name='validate_page_field'),
     path('validate_page_field/', validate_document_field, name='validate_document_field'),

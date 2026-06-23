@@ -120,6 +120,116 @@ def get_import_export_statistics():
     pass
 
 
+def get_transkribus_statistics(project):
+    """
+    Get statistics for Transkribus labels and statuses.
+
+    Processes two metadata blocks:
+    - metadata['transkribus_api']: Contains labels for documents and pages
+    - metadata['transkribus']: Contains page status (in_progress, done, ground_truth, etc.)
+
+    Args:
+        project: The project to gather statistics for
+
+    Returns:
+        Dictionary containing:
+        - page_label_counts: Distribution of page labels (from transkribus_api)
+        - page_status_counts: Distribution of page statuses (from transkribus)
+        - document_label_counts: Distribution of document labels (from transkribus_api)
+        - total_pages_with_labels: Count of pages that have Transkribus API labels
+        - total_pages_with_status: Count of pages that have Transkribus status
+        - total_documents_with_labels: Count of documents that have Transkribus API labels
+    """
+    from collections import Counter
+
+    # Initialize counters
+    page_label_counter = Counter()
+    page_status_counter = Counter()
+    document_label_counter = Counter()
+    pages_with_labels = 0
+    pages_with_status = 0
+    documents_with_labels = 0
+
+    # Get all documents in the project
+    documents = Document.objects.filter(project=project)
+
+    # Process document-level labels (from transkribus_api)
+    for document in documents:
+        if not isinstance(document.metadata, dict):
+            continue
+
+        transkribus_api_data = document.metadata.get('transkribus_api', {})
+        doc_labels = transkribus_api_data.get('labels', [])
+
+        if doc_labels:
+            documents_with_labels += 1
+            # Count each label
+            for label in doc_labels:
+                if isinstance(label, dict):
+                    label_name = label.get('name', 'Unknown')
+                    document_label_counter[label_name] += 1
+                elif isinstance(label, str):
+                    document_label_counter[label] += 1
+
+    # Process page-level data
+    pages = Page.objects.filter(document__project=project)
+
+    for page in pages:
+        if not isinstance(page.metadata, dict):
+            continue
+
+        # Process labels from transkribus_api
+        transkribus_api_data = page.metadata.get('transkribus_api', {})
+        page_labels = transkribus_api_data.get('labels', [])
+
+        if page_labels:
+            pages_with_labels += 1
+            # Count each label
+            for label in page_labels:
+                if isinstance(label, dict):
+                    label_name = label.get('name', 'Unknown')
+                    page_label_counter[label_name] += 1
+                elif isinstance(label, str):
+                    page_label_counter[label] += 1
+
+        # Process status from transkribus metadata
+        transkribus_data = page.metadata.get('transkribus', {})
+        page_status = transkribus_data.get('status')
+
+        if page_status:
+            pages_with_status += 1
+            page_status_counter[page_status] += 1
+
+    # Prepare result dictionary
+    result = {
+        'page_label_counts': dict(page_label_counter.most_common()),
+        'page_status_counts': dict(page_status_counter.most_common()),
+        'document_label_counts': dict(document_label_counter.most_common()),
+        'total_pages_with_labels': pages_with_labels,
+        'total_pages_with_status': pages_with_status,
+        'total_documents_with_labels': documents_with_labels,
+        'total_pages': pages.count(),
+        'total_documents': documents.count(),
+    }
+
+    # Calculate percentages
+    if result['total_pages'] > 0:
+        result['pages_with_labels_percentage'] = (pages_with_labels / result['total_pages']) * 100
+        result['pages_with_status_percentage'] = (pages_with_status / result['total_pages']) * 100
+    else:
+        result['pages_with_labels_percentage'] = 0
+        result['pages_with_status_percentage'] = 0
+
+    if result['total_documents'] > 0:
+        result['documents_with_labels_percentage'] = (
+            documents_with_labels / result['total_documents']
+        ) * 100
+    else:
+        result['documents_with_labels_percentage'] = 0
+
+    return result
+
+
 def gather_statistics():
     """Gather statistics for a project."""
     return {

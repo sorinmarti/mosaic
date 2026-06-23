@@ -121,9 +121,17 @@ def extract_zip_export_task(self, project_id, user_id, force_recreate_tags=False
                             text = tag["text"].strip()
                             copy_of_tag = copy.deepcopy(tag)
                             copy_of_tag.pop("text")
+                            known_keys = {'type', 'offset', 'length', 'continued',
+                                          'line_index', 'line_text', 'starts_tag',
+                                          'ends_tag', 'continues_tag', 'line_length'}
+                            transkribus_tags = {k: v for k, v in copy_of_tag.items()
+                                                if k not in known_keys}
                             from twf.utils.tags_utils import assign_tag
                             page_tag = PageTag(page=page, variation=text, variation_type=tag["type"],
-                                             additional_information=copy_of_tag)
+                                             additional_information={
+                                                 **copy_of_tag,
+                                                 'transkribus_tags': transkribus_tags
+                                             })
                             is_assigned = assign_tag(page_tag, self.user)
                             if is_assigned:
                                 assigned_tags += 1
@@ -482,9 +490,21 @@ def handle_document_and_page(data, file, project, extracting_user, existing_docu
     with open(file, 'rb') as f:
         file_name = os.path.basename(str(file))
         page_instance.xml_file.save(file_name, f, save=False)
-    
+
+    # Store TranskribusMetadata in page.metadata under 'transkribus' key
+    if hasattr(page_instance, 'metadata'):
+        existing_metadata = page_instance.metadata or {}
+
+        # Create or update the "transkribus" key
+        if 'transkribus' not in existing_metadata:
+            existing_metadata['transkribus'] = {}
+
+        # Store all extracted TranskribusMetadata attributes
+        existing_metadata['transkribus'].update(data)
+        page_instance.metadata = existing_metadata
+
     page_instance.save(current_user=extracting_user)
-    
+
     return doc_instance.document_id, page_created
 
 
@@ -599,9 +619,23 @@ def enrich_documents_with_api_metadata(project, documents_to_enrich, user, celer
                 if 'transkribus_api' not in existing_metadata:
                     existing_metadata['transkribus_api'] = {}
 
-                existing_metadata['transkribus_api']['labels'] = enriched_data.get('labels', [])
+                doc_labels = enriched_data.get('labels', [])
+                existing_metadata['transkribus_api']['labels'] = doc_labels
                 existing_metadata['transkribus_api']['page_labels_available'] = enriched_data.get('page_labels_available', [])
+
+                # Check for "Exclude" label (same logic as pages)
+                is_excluded = any(label.get('name', '').lower() == 'exclude' for label in doc_labels)
+                existing_metadata['transkribus_api']['is_excluded'] = is_excluded
+
                 doc_instance.metadata = existing_metadata
+
+                # Update is_ignored field based on "Exclude" label
+                if is_excluded:
+                    doc_instance.is_ignored = True
+                    if celery_task.twf_task:
+                        celery_task.twf_task.text += f"  ⊘ Document {doc_id} marked as excluded (has 'Exclude' label)\n"
+                        celery_task.twf_task.save(update_fields=["text"])
+
                 doc_instance.save(current_user=user)
 
                 # Update page metadata with labels and exclusion status
@@ -768,6 +802,18 @@ def sync_documents_and_pages(copied_files, project, user, celery_task, delete_re
             with open(file, 'rb') as f:
                 file_name = os.path.basename(str(file))
                 page_instance.xml_file.save(file_name, f, save=False)
+
+            # Store TranskribusMetadata in page.metadata under 'transkribus' key
+            if hasattr(page_instance, 'metadata'):
+                existing_metadata = page_instance.metadata or {}
+
+                # Create or update the "transkribus" key
+                if 'transkribus' not in existing_metadata:
+                    existing_metadata['transkribus'] = {}
+
+                # Store all extracted TranskribusMetadata attributes
+                existing_metadata['transkribus'].update(data)
+                page_instance.metadata = existing_metadata
 
             page_instance.save(current_user=user)
 

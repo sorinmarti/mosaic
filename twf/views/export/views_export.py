@@ -221,6 +221,7 @@ class TWFExportConfigurationView(FormView, TWFExportView):
          metadata_page_service, metadata_page_fields,
          metadata_entry_service, metadata_entry_fields) = self.get_export_context_data()
         context['db_fields_json'] = json.dumps(db_fields)
+        context['all_db_fields_json'] = json.dumps(db_fields)  # All fields available in all sections
         context['special_fields_json'] = json.dumps(special_fields)
         context['metadata_doc_services_json'] = json.dumps(metadata_doc_services)
         context['metadata_doc_fields_json'] = json.dumps(metadata_doc_fields)
@@ -285,12 +286,14 @@ class TWFExportConfigurationView(FormView, TWFExportView):
 
         db_fields = {
             'general': [
+                ('project.id', 'Mosaic Project ID', project.id),
                 ('project.title', 'Project Title', project.title),
                 ('project.description', 'Project Description', project.description),
                 ('project.collection_id', 'Transkribus Collection ID', project.collection_id),
                 ('project.downloaded_at', 'Downloaded At', project.downloaded_at.strftime('%Y-%m-%d %H:%M:%S')),
             ],
             'documents': [
+                ('document.id', 'Mosaic Document ID', sample_doc.id),
                 ('document.title', 'Document Title', sample_doc.title),
                 ('document.document_id', 'Transkribus Document ID', sample_doc.document_id),
                 ('document.is_parked', 'Is Parked', sample_doc.is_parked),
@@ -298,6 +301,7 @@ class TWFExportConfigurationView(FormView, TWFExportView):
                 ('document.status', 'Status', sample_doc.status),
             ],
             'pages': [
+                ('page.id', 'Mosaic Page ID', sample_page.id),
                 ('page.tk_page_id', 'Transkribus Page ID', sample_page.tk_page_id),
                 ('page.tk_page_number', 'Transkribus Page Number', sample_page.tk_page_number),
                 ('page.is_ignored', 'Is Ignored', sample_page.is_ignored),
@@ -353,26 +357,58 @@ class TWFExportConfigurationView(FormView, TWFExportView):
             ]
         }
 
+        # Collect all unique metadata keys across all documents
         metadata_doc_services = []
         metadata_doc_fields = {}
-        if sample_doc:
-            for key, value in sample_doc.metadata.items():
-                metadata_doc_services.append((key, key, str(value)))
-                metadata_doc_fields[key] = self.flatten_metadata('', value)
+        all_doc_metadata_keys = {}
 
+        # Iterate through all documents to find all unique metadata keys
+        for doc in project.documents.all():
+            if doc.metadata:
+                for key, value in doc.metadata.items():
+                    if key not in all_doc_metadata_keys:
+                        all_doc_metadata_keys[key] = value
+
+        # Build metadata services and fields from all unique keys
+        for key, value in all_doc_metadata_keys.items():
+            metadata_doc_services.append((key, key, str(value)))
+            metadata_doc_fields[key] = self.flatten_metadata('', value)
+
+        # Collect all unique metadata keys across all pages
         metadata_page_service = []
         metadata_page_fields = {}
-        if sample_page:
-            for key, value in sample_page.metadata.items():
-                metadata_page_service.append((key, key , str(value)))
-                metadata_page_fields[key] = self.flatten_metadata('', value)
+        all_page_metadata_keys = {}
 
+        # Iterate through all pages to find all unique metadata keys
+        for doc in project.documents.all():
+            for page in doc.pages.all():
+                if page.metadata:
+                    for key, value in page.metadata.items():
+                        if key not in all_page_metadata_keys:
+                            all_page_metadata_keys[key] = value
+
+        # Build metadata services and fields from all unique keys
+        for key, value in all_page_metadata_keys.items():
+            metadata_page_service.append((key, key, str(value)))
+            metadata_page_fields[key] = self.flatten_metadata('', value)
+
+        # Collect all unique metadata keys across all dictionary entries
         metadata_entry_service = []
         metadata_entry_fields = {}
-        if sample_entry:
-            for key, value in sample_entry.metadata.items():
-                metadata_entry_service.append((key, key , str(value)))
-                metadata_entry_fields[key] = self.flatten_metadata('', value)
+        all_entry_metadata_keys = {}
+
+        # Iterate through all dictionary entries to find all unique metadata keys
+        for dictionary in project.selected_dictionaries.all():
+            for entry in dictionary.entries.all():
+                if entry.metadata:
+                    for key, value in entry.metadata.items():
+                        if key not in all_entry_metadata_keys:
+                            all_entry_metadata_keys[key] = value
+
+        # Build metadata services and fields from all unique keys
+        for key, value in all_entry_metadata_keys.items():
+            metadata_entry_service.append((key, key, str(value)))
+            metadata_entry_fields[key] = self.flatten_metadata('', value)
 
         return (db_fields, special_fields, metadata_doc_services,
                 metadata_doc_fields, metadata_page_service, metadata_page_fields,

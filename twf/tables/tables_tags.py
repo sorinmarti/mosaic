@@ -17,13 +17,15 @@ class TagTable(tables.Table):
     def render_is_parked(self, value):
         if value:
             return format_html(
-                '<span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="This tag is parked">'
-                '<i class="fa fa-box-archive me-1"></i>Yes</span>'
+                '<span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="{}">'
+                '<i class="fa fa-box-archive me-1"></i>{}</span>',
+                'This tag is parked', 'Yes'
             )
         else:
             return format_html(
-                '<span class="badge bg-success" data-bs-toggle="tooltip" title="This tag is active">'
-                '<i class="fa fa-check-circle me-1"></i>No</span>'
+                '<span class="badge bg-success" data-bs-toggle="tooltip" title="{}">'
+                '<i class="fa fa-check-circle me-1"></i>{}</span>',
+                'This tag is active', 'No'
             )
 
     class Meta:

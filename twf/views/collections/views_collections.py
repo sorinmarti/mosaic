@@ -15,7 +15,7 @@ from twf.tables.tables_collection import CollectionTable
 logger = logging.getLogger(__name__)
 from twf.forms.collections.collections_forms import CollectionCreateForm, CollectionAddDocumentForm, CollectionUpdateForm, \
     CollectionItemReviewForm, CollectionItemUpdateForm
-from twf.models import CollectionItem, Collection, Workflow
+from twf.models import CollectionItem, Collection, Workflow, Document
 from twf.tables.tables_collection import CollectionItemTable
 from twf.views.collections.views_crud import fill_collection_item, clean_annotation
 from twf.views.views_base import TWFView
@@ -264,7 +264,7 @@ class TWFCollectionsCreateView(FormView, TWFCollectionsView):
            messages.success(self.request, 'Collection has been created successfully. '
                                           'You now can items to the collection.')
         elif routine == 'an_item_per_document':
-            all_documents = self.get_project().documents.all()
+            all_documents = Document.get_active_documents(self.get_project())
             for doc in all_documents:
                 item = CollectionItem(document=doc, collection=self.object, document_configuration={'annotations': []})
                 item.title = f'Item for {doc.document_id}'
@@ -274,7 +274,7 @@ class TWFCollectionsCreateView(FormView, TWFCollectionsView):
             messages.success(self.request, 'Collection has been created successfully. '
                                            'An item has been created for each document.')
         elif routine == 'an_item_per_page':
-            all_documents = self.get_project().documents.all()
+            all_documents = Document.get_active_documents(self.get_project())
             for doc in all_documents:
                 for page in doc.get_active_pages():
                     item = CollectionItem(document=doc, collection=self.object, document_configuration={'annotations': []})
@@ -284,7 +284,7 @@ class TWFCollectionsCreateView(FormView, TWFCollectionsView):
             messages.success(self.request, 'Collection has been created successfully. '
                                            'An item has been created for each page.')
         elif routine == 'structure_tag_based':
-            all_documents = self.get_project().documents.all()
+            all_documents = Document.get_active_documents(self.get_project())
             structure_tags = []
             for doc in all_documents:
                 for page in doc.get_active_pages():
@@ -446,6 +446,21 @@ class TWFCollectionsReviewView(FormView, TWFCollectionsView):
             self.next_item.title = form.cleaned_data['title']
             self.next_item.review_notes = form.cleaned_data['review_notes']
 
+            # Save custom field data if workflow has custom fields
+            custom_fields = self.workflow.get_custom_fields()
+            if custom_fields:
+                workflow_data = {}
+                for field_name in custom_fields.keys():
+                    field_value = self.request.POST.get(field_name)
+                    if field_value:
+                        workflow_data[field_name] = field_value
+
+                if workflow_data:
+                    # Store in collection item's metadata or document_configuration
+                    if 'workflow_review' not in self.next_item.document_configuration:
+                        self.next_item.document_configuration['workflow_review'] = {}
+                    self.next_item.document_configuration['workflow_review'].update(workflow_data)
+
             if action_r:
                 self.next_item.status = 'reviewed'
             if action_f:
@@ -480,6 +495,13 @@ class TWFCollectionsReviewView(FormView, TWFCollectionsView):
 
         if not self.workflow_active:
             context['has_active_workflow'] = False
+            # Still provide workflow definition for the start page
+            if self.workflow:
+                context['workflow_definition'] = self.workflow.get_workflow_definition()
+            else:
+                context['workflow_definition'] = self.get_project().get_workflow_definition('review_collection')
+            context['workflow_instructions'] = ''
+            context['custom_fields'] = {}
             return context
 
         context['has_active_workflow'] = True
@@ -487,6 +509,11 @@ class TWFCollectionsReviewView(FormView, TWFCollectionsView):
         # Fetch the next document
         context['workflow'] = self.workflow
         context['collection_item'] = self.next_item
+
+        # Add workflow configuration
+        context['workflow_definition'] = self.workflow.get_workflow_definition()
+        context['workflow_instructions'] = self.workflow.get_instructions()
+        context['custom_fields'] = self.workflow.get_custom_fields()
 
         return context
 

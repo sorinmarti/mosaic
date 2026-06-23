@@ -156,6 +156,15 @@ def extract_tags_from_parsed_data(parsed_data):
     Parses the 'custom' attribute from PAGE XML elements to extract tag information
     including person names, places, organizations, works, etc.
 
+    With simple-alto-parser v0.0.22+, the parser provides positional data directly:
+    - offset: Character position within the line
+    - length: Length of the tagged text
+    - line_index: Which line within the region (0-based)
+    - line_text: The actual text of that specific line
+
+    Any additional attributes present in the PAGE XML tag (beyond the standard ones)
+    are collected and returned under the 'transkribus_tags' key.
+
     Args:
         parsed_data: Dict containing parsed PAGE XML data with 'elements' key
 
@@ -168,7 +177,11 @@ def extract_tags_from_parsed_data(parsed_data):
             'length': 14,
             'continued': False,
             'line_id': 'r_tl_1',
-            'line_text': 'Qu\'importe que Richard Wagner...'
+            'line_text': 'Qu\'importe que Richard Wagner...',
+            'region_index': 0,
+            'line_index_in_region': 0,
+            'line_index_global': 0,
+            'transkribus_tags': {'my_additional_id': '12345'}  # any extra PAGE XML attrs
         }
     """
     tags = []
@@ -176,14 +189,23 @@ def extract_tags_from_parsed_data(parsed_data):
     if not parsed_data or 'elements' not in parsed_data:
         return tags
 
-    for element in parsed_data.get('elements', []):
-        # Get line identifier and text
+    # Track global line count across all regions
+    global_line_counter = 0
+
+    for region_index, element in enumerate(parsed_data.get('elements', [])):
+        # Get region identifier
         element_id = element.get('id', '')
+
+        # Generate a synthetic line_id based on element position if element_id is empty
+        # This ensures we have consistent line IDs for matching even when Transkribus doesn't provide them
+        if not element_id or element_id == '':
+            element_id = f'synthetic_region_{region_index}'
+
         element_data = element.get('element_data', {})
 
-        # Get the full line text
+        # Get all text lines in this region (for line counting)
         text_lines = element_data.get('text_lines', [])
-        line_text = ' '.join(text_lines) if text_lines else ''
+        lines_in_region = len(text_lines) if text_lines else 0
 
         # Parse custom attribute to extract tags
         custom_data = element_data.get('custom_structure', {})
@@ -199,8 +221,13 @@ def extract_tags_from_parsed_data(parsed_data):
         elif isinstance(custom_data, str):
             custom_str = custom_data
 
-        # Also check custom_list_structure which is used in the current code
+        # Check custom_list_structure (standard format from parser v0.0.22+)
         custom_list = element_data.get('custom_list_structure', [])
+
+        # Keys that are handled explicitly and should not be passed through as extras
+        _known_keys = {'type', 'text', 'offset', 'length', 'continued',
+                       'line_index', 'line_text', 'starts_tag', 'ends_tag',
+                       'continues_tag', 'line_length'}
 
         # If we have custom_list_structure, use that (current format)
         if custom_list:
@@ -212,15 +239,29 @@ def extract_tags_from_parsed_data(parsed_data):
                 if not tag_type or tag_type == 'readingOrder':
                     continue
 
-                # Extract tag text
+                # Extract tag text (parser v0.0.22+ provides this directly)
                 variation_text = tag_data.get('text', '').strip()
                 if not variation_text:
                     continue
 
-                # Get offset and length if available
+                # Get positional data from parser
                 offset = tag_data.get('offset', 0)
                 length = tag_data.get('length', len(variation_text))
                 continued = tag_data.get('continued', False)
+
+                # NEW in parser v0.0.22+: line_index and line_text
+                line_index_in_region = tag_data.get('line_index', 0)
+                tag_line_text = tag_data.get('line_text', '')
+
+                # Fallback: if parser didn't provide line_text, use joined region text
+                if not tag_line_text and text_lines:
+                    tag_line_text = ' '.join(text_lines)
+
+                # Calculate global line index
+                line_index_global = global_line_counter + line_index_in_region
+
+                # Collect any non-standard attributes from the PAGE XML tag
+                transkribus_tags = {k: v for k, v in tag_data.items() if k not in _known_keys}
 
                 tags.append({
                     'variation': variation_text,
@@ -229,13 +270,20 @@ def extract_tags_from_parsed_data(parsed_data):
                     'length': length,
                     'continued': continued,
                     'line_id': element_id,
-                    'line_text': line_text
+                    'line_text': tag_line_text,
+                    'region_index': region_index,
+                    'line_index_in_region': line_index_in_region,
+                    'line_index_global': line_index_global,
+                    'transkribus_tags': transkribus_tags
                 })
 
-        # Otherwise parse from custom string (for raw PAGE XML)
+        # Otherwise parse from custom string (for raw PAGE XML - legacy support)
         elif custom_str:
             # Extract tags using regex: tagType {key:value; key:value;}
             tag_pattern = re.compile(r'(\w+)\s+\{([^}]+)\}')
+
+            # Join all lines for legacy extraction
+            region_text = ' '.join(text_lines) if text_lines else ''
 
             for match in tag_pattern.finditer(custom_str):
                 tag_type = match.group(1)
@@ -263,16 +311,20 @@ def extract_tags_from_parsed_data(parsed_data):
 
                 continued = attrs.get('continued', '').lower() == 'true'
 
-                # Extract tagged text from line using offset and length
-                if length > 0 and offset >= 0 and offset + length <= len(line_text):
-                    variation_text = line_text[offset:offset + length].strip()
+                # Extract tagged text from region using offset and length
+                if length > 0 and offset >= 0 and offset + length <= len(region_text):
+                    variation_text = region_text[offset:offset + length].strip()
                 else:
                     # Fallback if extraction fails
                     logger.warning(f"Could not extract tag text at offset {offset}, length {length} "
-                                 f"from line: {line_text[:50]}...")
+                                 f"from region: {region_text[:50]}...")
                     continue
 
                 if variation_text:
+                    # Legacy mode: can't determine exact line, use region-level data
+                    # Extra attrs are not available in the legacy string format
+                    extra_attrs = {k: v for k, v in attrs.items()
+                                   if k not in {'offset', 'length', 'continued'}}
                     tags.append({
                         'variation': variation_text,
                         'type': tag_type,
@@ -280,8 +332,15 @@ def extract_tags_from_parsed_data(parsed_data):
                         'length': length,
                         'continued': continued,
                         'line_id': element_id,
-                        'line_text': line_text
+                        'line_text': region_text,
+                        'region_index': region_index,
+                        'line_index_in_region': 0,  # Unknown in legacy mode
+                        'line_index_global': global_line_counter,
+                        'transkribus_tags': extra_attrs
                     })
+
+        # Update global line counter for next region
+        global_line_counter += lines_in_region
 
     return tags
 
@@ -386,11 +445,15 @@ class SmartTagMatcher:
         """
         score = 0
 
-        # REQUIRED: Same line ID
-        old_line_id = old_tag.additional_information.get('line_id', '')
+        # REQUIRED: Same line ID (for backward compatibility)
+        # Try new explicit fields first, fall back to additional_information
+        old_line_id = old_tag.additional_information.get('line_id', '') if old_tag.additional_information else ''
         new_line_id = new_tag_data['line_id']
 
-        if old_line_id != new_line_id:
+        # Special case: If old_line_id is empty (legacy data without proper line IDs),
+        # allow matching based on other signals instead of requiring line ID match.
+        # This handles transition from empty line IDs to synthetic line IDs.
+        if old_line_id and new_line_id and old_line_id != new_line_id:
             return 0  # Different lines = not the same tag
 
         # REQUIRED: Same variation_type
@@ -408,7 +471,8 @@ class SmartTagMatcher:
                 score += (similarity / 100) * self.MAX_FUZZY_TEXT_SCORE
 
         # Signal 2: Offset proximity (max 30 points)
-        old_offset = old_tag.additional_information.get('offset', 0)
+        # Use new explicit field, fall back to additional_information for old data
+        old_offset = old_tag.offset_in_line if hasattr(old_tag, 'offset_in_line') else old_tag.additional_information.get('offset', 0)
         new_offset = new_tag_data['offset']
         offset_diff = abs(old_offset - new_offset)
 
@@ -423,7 +487,8 @@ class SmartTagMatcher:
         # else: 0 points
 
         # Signal 3: Length similarity (bonus up to 10 points)
-        old_length = old_tag.additional_information.get('length', len(old_tag.variation))
+        # Use new explicit field, fall back to additional_information for old data
+        old_length = old_tag.length if hasattr(old_tag, 'length') else old_tag.additional_information.get('length', len(old_tag.variation))
         new_length = new_tag_data['length']
         length_diff = abs(old_length - new_length)
 

@@ -1,49 +1,622 @@
 {% extends 'twf/base/base.html' %}
 {% load crispy_forms_tags %}
+{% load twf_filters %}
 
 {% block content %}
     {% if has_active_workflow %}
-        <p class="lead">You have an active workflow. You are working on
-            Document <strong>{{ workflow.current_item_index|add:1 }} of {{ workflow.item_count }}</strong></p>
-        <div>
-            {% if document %}
-                <p><strong>Document ID:</strong> {{ document.id }}</p>
-                <p><strong>Title:</strong> {{ document.title }}</p>
-
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="document_id" value="{{ document.id }}">
-                    <button data-bs-toggle="tooltip" data-bs-placement="bottom" title="Document is marked as parked for further review"
-                            type="submit" class="btn btn-secondary" name="action" value="set_parked">Mark as Parked</button>
-                    <button data-bs-toggle="tooltip" data-bs-placement="bottom" title="Document is marked as irrelevant to the project"
-                            type="submit" class="btn btn-warning" name="action" value="set_needs_work">Needs Work on Transkribus</button>
-                    <button data-bs-toggle="tooltip" data-bs-placement="bottom" title="Document is marked to be edited in Transkribus"
-                            type="submit" class="btn btn-warning" name="action" value="set_irrelevant">Mark as Irrelevant</button>
-                    <button data-bs-toggle="tooltip" data-bs-placement="bottom" title="Document is marked as correct and relevant to the project"
-                            type="submit" class="btn btn-success" name="action" value="set_reviewed">Mark as Correct</button>
-
-                </form>
-            {% else %}
-                <p>All documents have been reviewed.</p>
-                <button
-                  type="button"
-                  class="btn btn-dark show-confirm-modal"
-                  data-message="Do you really want to start a Review workflow?"
-                  data-redirect-url="{% url 'twf:start_review_document_workflow' %}">
-                  Start New Document Review Workflow
-                </button>
-            {% endif %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-primary">
+                    <strong>{{ workflow_definition.title }}</strong>
+                    <span class="float-end">Progress: <strong>{{ workflow.current_item_index|add:1 }} of {{ workflow.item_count }}</strong></span>
+                </div>
+            </div>
         </div>
+
+        {% if document %}
+            <!-- Main Content Area -->
+            <div class="row mb-4">
+                <!-- Left Column: Document Information & Review Form -->
+                <div class="col-md-8">
+                    <!-- Document Information -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>Document Information</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Document ID:</dt>
+                                        <dd class="col-sm-8">{{ document.id }}</dd>
+
+                                        <dt class="col-sm-4">Title:</dt>
+                                        <dd class="col-sm-8">{{ document.title }}</dd>
+
+                                        <dt class="col-sm-4">Status:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge bg-secondary">{{ document.get_status_display }}</span>
+                                        </dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl class="row mb-0">
+                                        {% if document.metadata %}
+                                            <dt class="col-sm-4">Metadata:</dt>
+                                            <dd class="col-sm-8">{{ document.metadata|length }} field(s)</dd>
+                                        {% endif %}
+
+                                        <dt class="col-sm-4">Total Pages:</dt>
+                                        <dd class="col-sm-8">
+                                            {{ document.pages.count }}
+                                            {% if actual_pages and excluded_pages %}
+                                                ({{ actual_pages|length }} actual, {{ excluded_pages|length }} excluded)
+                                            {% endif %}
+                                        </dd>
+
+                                        <dt class="col-sm-4">Transkribus:</dt>
+                                        <dd class="col-sm-8">
+                                            <a href="{{ document.get_transkribus_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-box-arrow-up-right"></i> View in Transkribus
+                                            </a>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review Form -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>Review Form</strong>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" id="review-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="document_id" value="{{ document.id }}">
+
+                                <!-- Custom Fields -->
+                                {% if custom_fields %}
+                                    <div class="mb-3">
+                                        <h5>Additional Information</h5>
+                                        <div class="row">
+                                            {% for field_name, field_config in custom_fields.items %}
+                                                <div class="col-md-6 mb-3">
+                                                    <label for="id_{{ field_name }}" class="form-label">
+                                                        {{ field_config.label }}
+                                                        {% if field_config.required %}
+                                                            <span class="text-danger">*</span>
+                                                        {% endif %}
+                                                    </label>
+
+                                                    {% if field_config.type == 'select' %}
+                                                        <select name="{{ field_name }}" id="id_{{ field_name }}" class="form-select"
+                                                                {% if field_config.required %}required{% endif %}>
+                                                            <option value="">-- Select --</option>
+                                                            {% for choice_value, choice_label in field_config.choices %}
+                                                                <option value="{{ choice_value }}">{{ choice_label }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    {% elif field_config.type == 'textarea' %}
+                                                        <textarea name="{{ field_name }}" id="id_{{ field_name }}" class="form-control" rows="3"
+                                                                  {% if field_config.required %}required{% endif %}></textarea>
+                                                    {% else %}
+                                                        <input type="text" name="{{ field_name }}" id="id_{{ field_name }}" class="form-control"
+                                                               {% if field_config.required %}required{% endif %}>
+                                                    {% endif %}
+
+                                                    {% if field_config.help_text %}
+                                                        <small class="form-text text-muted">{{ field_config.help_text }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <hr>
+                                {% endif %}
+
+                                <!-- Workflow Comments -->
+                                <div class="mb-3">
+                                    <label for="id_workflow_remarks" class="form-label">
+                                        <strong>Review Comments</strong>
+                                    </label>
+                                    <textarea name="workflow_remarks"
+                                              id="id_workflow_remarks"
+                                              class="form-control"
+                                              rows="3"
+                                              placeholder="Add any notes about this document's review...">{{ workflow_remarks }}</textarea>
+                                    <small class="form-text text-muted">
+                                        Optional notes about your review decision (e.g., why it needs work, what to check, etc.)
+                                    </small>
+                                </div>
+                                <hr>
+
+                                <!-- Action Buttons -->
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-success w-100" name="action" value="set_reviewed"
+                                                data-bs-toggle="tooltip" title="Document is correct and relevant to the project">
+                                            <i class="bi bi-check-circle"></i> Mark as Correct
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-warning w-100" name="action" value="set_needs_work"
+                                                data-bs-toggle="tooltip" title="Document needs editing in Transkribus">
+                                            <i class="bi bi-pencil-square"></i> Needs Work
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-secondary w-100" name="action" value="set_parked"
+                                                data-bs-toggle="tooltip" title="Park document for further review later">
+                                            <i class="bi bi-pause-circle"></i> Park
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-danger w-100" name="action" value="set_irrelevant"
+                                                data-bs-toggle="tooltip" title="Document is not relevant - mark for Exclude label in Transkribus">
+                                            <i class="bi bi-x-circle"></i> Mark as Irrelevant
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Instructions -->
+                <div class="col-md-4">
+                    {% if workflow_instructions %}
+                        <div class="card mb-3 sticky-instructions">
+                            <div class="card-header bg-info text-white">
+                                <i class="bi bi-info-circle"></i> <strong>Instructions</strong>
+                            </div>
+                            <div class="card-body">
+                                {{ workflow_instructions|safe }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Full-Width Page Preview Sections -->
+            <!-- Actual Pages Images Section -->
+            {% if actual_pages %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-file-earmark-text"></i> <strong>Actual Pages</strong>
+                                <span class="badge bg-light text-primary ms-2">{{ actual_pages|length }}</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="full-width-scroll-container">
+                                    <div class="page-gallery">
+                                        {% for page in actual_pages %}
+                                            <div class="page-item">
+                                                <div class="page-number-badge">{{ page.tk_page_number }}</div>
+                                                {% with image_url=page.get_image_url %}
+                                                    {% if image_url %}
+                                                        <img src="{{ image_url }}"
+                                                             class="page-image"
+                                                             alt="Page {{ page.tk_page_number }}"
+                                                             title="Page {{ page.tk_page_number }} - Click to enlarge"
+                                                             onclick="window.open('{{ image_url }}', '_blank')">
+                                                    {% else %}
+                                                        <div class="page-placeholder">
+                                                            <small>No image</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Actual Pages Text Section -->
+            {% if actual_pages %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-file-text"></i> <strong>Actual Pages - Text</strong>
+                                <span class="badge bg-light text-primary ms-2">{{ actual_pages|length }}</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="full-width-scroll-container">
+                                    <div class="page-gallery">
+                                        {% for page in actual_pages %}
+                                            <div class="page-text-item">
+                                                <div class="page-number-badge">{{ page.tk_page_number }}</div>
+                                                <div class="page-text-content">{{ page.get_text|default:"No text available" }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Actual Pages Tags Section -->
+            {% if actual_pages %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-tags"></i> <strong>Actual Pages - Tags</strong>
+                                <span class="badge bg-light text-primary ms-2">{{ actual_pages|length }}</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="full-width-scroll-container">
+                                    <div class="page-gallery">
+                                        {% for page in actual_pages %}
+                                            <div class="page-tags-item">
+                                                <div class="page-number-badge">{{ page.tk_page_number }}</div>
+                                                <div class="page-tags-content">
+                                                    {% with page_tags=page.tags.all %}
+                                                        {% if page_tags %}
+                                                            {% for tag in page_tags %}
+                                                                <div class="tag-entry{% if not tag.is_resolved %} tag-unresolved{% endif %}">
+                                                                    <span class="tag-type{% if not tag.is_resolved %} tag-type-unresolved{% endif %}">{{ tag.variation_type }}</span>:
+                                                                    <span class="tag-text">{{ tag.variation }}</span>
+                                                                    {% if tag.is_resolved %}
+                                                                        <span class="tag-assigned">✓</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <div class="text-muted small">No tags</div>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Excluded Pages Section -->
+            {% if excluded_pages %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <i class="bi bi-dash-circle"></i> <strong>Excluded Pages</strong>
+                                <span class="badge bg-light text-secondary ms-2">{{ excluded_pages|length }}</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="full-width-scroll-container">
+                                    <div class="page-gallery excluded">
+                                        {% for page in excluded_pages %}
+                                            <div class="page-item excluded">
+                                                <div class="page-number-badge excluded">{{ page.tk_page_number }}</div>
+                                                {% with image_url=page.get_image_url %}
+                                                    {% if image_url %}
+                                                        <img src="{{ image_url }}"
+                                                             class="page-image excluded"
+                                                             alt="Page {{ page.tk_page_number }} (Excluded)"
+                                                             title="Page {{ page.tk_page_number }} (Excluded) - Click to enlarge"
+                                                             onclick="window.open('{{ image_url }}', '_blank')">
+                                                    {% else %}
+                                                        <div class="page-placeholder excluded">
+                                                            <small>No image</small>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                <h4>All documents have been reviewed!</h4>
+                <p>You have completed reviewing all documents in this workflow batch.</p>
+                <button type="button" class="btn btn-primary show-confirm-modal"
+                        data-message="Do you really want to start a new Review workflow?"
+                        data-redirect-url="{% url 'twf:start_review_document_workflow' %}">
+                    Start New Document Review Workflow
+                </button>
+            </div>
+        {% endif %}
     {% else %}
-         <p>There is no active Review Documents Workflow for user {{ request.user }}.</p>
-        <button
-          type="button"
-          class="btn btn-dark show-confirm-modal"
-          data-message="Do you really want to start a Review workflow?"
-          data-redirect-url="{% url 'twf:start_review_document_workflow' %}">
-          Start Document Review Workflow
-        </button>
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h3>{{ workflow_definition.title }}</h3>
+                        <p class="lead">{{ workflow_definition.description }}</p>
+
+                        {% if workflow_instructions %}
+                            <div class="alert alert-info text-start mt-3">
+                                <strong>What to expect:</strong>
+                                {{ workflow_instructions|safe }}
+                            </div>
+                        {% endif %}
+
+                        <div class="alert alert-secondary text-start mt-3">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Workflow Details:</strong>
+                            <ul class="mb-0">
+                                <li>Batch size: <strong>{{ workflow_definition.batch_size }}</strong> documents</li>
+                                {% if custom_fields %}
+                                    <li>Custom fields: <strong>{{ custom_fields|length }}</strong> field(s) to complete</li>
+                                {% else %}
+                                    <li>No custom fields configured</li>
+                                {% endif %}
+                                {% if not workflow_instructions %}
+                                    <li>No custom instructions configured</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+
+                        {% if not workflow_instructions and not custom_fields %}
+                            <div class="alert alert-warning text-start mt-3">
+                                <i class="bi bi-gear"></i>
+                                <strong>Want to customize this workflow?</strong>
+                                <p class="mb-2">Add instructions, custom fields, and adjust the batch size.</p>
+                                <a href="{% url 'twf:project_settings_workflows' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-gear"></i> Configure Workflow Settings
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <p>There is no active Review Documents Workflow for user {{ request.user }}.</p>
+
+                        <button type="button" class="btn btn-primary btn-lg show-confirm-modal"
+                                data-message="Do you really want to start a Review workflow with {{ workflow_definition.batch_size }} documents?"
+                                data-redirect-url="{% url 'twf:start_review_document_workflow' %}">
+                            <i class="bi bi-play-circle"></i> Start Document Review Workflow
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     {% endif %}
+{% endblock %}
+
+{% block css %}
+<style>
+    /* Sticky instructions on the right */
+    .sticky-instructions {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
+    /* Full-width scroll container */
+    .full-width-scroll-container {
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        padding: 15px;
+        background: #f8f9fa;
+    }
+
+    /* Page gallery container */
+    .page-gallery {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    /* Individual page item */
+    .page-item {
+        display: inline-block;
+        position: relative;
+        margin-right: 15px;
+        vertical-align: top;
+    }
+
+    /* Page number badge */
+    .page-number-badge {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: rgba(13, 110, 253, 0.95);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .page-number-badge.excluded {
+        background: rgba(108, 117, 125, 0.95);
+    }
+
+    /* Page image - SCALED to fixed size */
+    .page-image {
+        width: 200px;
+        height: 280px;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+        display: block;
+    }
+
+    .page-image:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transform: scale(1.05);
+    }
+
+    .page-image.excluded {
+        border-color: #adb5bd;
+        filter: grayscale(50%);
+        opacity: 0.7;
+    }
+
+    .page-image.excluded:hover {
+        border-color: #6c757d;
+        filter: grayscale(20%);
+        opacity: 0.9;
+    }
+
+    /* Placeholder for missing images */
+    .page-placeholder {
+        width: 200px;
+        height: 280px;
+        border: 2px dashed #dee2e6;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+
+    /* Custom scrollbar */
+    .full-width-scroll-container::-webkit-scrollbar {
+        height: 10px;
+    }
+
+    .full-width-scroll-container::-webkit-scrollbar-track {
+        background: #e9ecef;
+    }
+
+    .full-width-scroll-container::-webkit-scrollbar-thumb {
+        background: #adb5bd;
+        border-radius: 5px;
+    }
+
+    .full-width-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #6c757d;
+    }
+
+    /* Page text containers */
+    .page-text-item {
+        display: inline-block;
+        position: relative;
+        margin-right: 15px;
+        vertical-align: top;
+        width: 200px;
+    }
+
+    .page-text-content {
+        width: 200px;
+        height: 280px;
+        overflow-y: auto;
+        padding: 30px 8px 8px 8px;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        background: white;
+        font-size: 11px;
+        line-height: 1.3;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .page-text-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .page-text-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .page-text-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    .page-text-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Page tags containers */
+    .page-tags-item {
+        display: inline-block;
+        position: relative;
+        margin-right: 15px;
+        vertical-align: top;
+        width: 200px;
+    }
+
+    .page-tags-content {
+        width: 200px;
+        height: 280px;
+        overflow-y: auto;
+        padding: 30px 8px 8px 8px;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        background: white;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .tag-entry {
+        margin-bottom: 8px;
+        padding: 4px 6px;
+        background: #f8f9fa;
+        border-left: 3px solid #0d6efd;
+        border-radius: 2px;
+    }
+
+    .tag-entry.tag-unresolved {
+        background: #fff3cd;
+        border-left: 3px solid #fd7e14;
+    }
+
+    .tag-type {
+        font-weight: bold;
+        color: #0d6efd;
+        text-transform: uppercase;
+        font-size: 10px;
+    }
+
+    .tag-type.tag-type-unresolved {
+        color: #fd7e14;
+    }
+
+    .tag-text {
+        color: #212529;
+        word-wrap: break-word;
+    }
+
+    .tag-assigned {
+        color: #198754;
+        font-weight: bold;
+        margin-left: 4px;
+    }
+
+    .page-tags-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .page-tags-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .page-tags-content::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+    .page-tags-content::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+</style>
 {% endblock %}
 
 {% block script %}

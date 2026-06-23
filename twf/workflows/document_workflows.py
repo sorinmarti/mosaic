@@ -6,10 +6,24 @@ from twf.tasks.instant_tasks import start_related_task
 from twf.views.views_base import TWFView
 
 
-def create_document_workflow(project, user, item_count):
+def create_document_workflow(project, user, item_count=None):
     """
     Create a new workflow for reviewing documents and pre-select the documents.
+
+    Parameters
+    ----------
+    project : Project
+        The project to create the workflow for
+    user : User
+        The user creating the workflow
+    item_count : int, optional
+        Number of documents to review. If None, uses configured batch size from workflow definition.
     """
+    # Use configured batch size if item_count not provided
+    if item_count is None:
+        workflow_def = project.get_workflow_definition('review_documents')
+        item_count = workflow_def.get('batch_size', 5)
+
     # Get available document IDs that are not reserved and not reviewed
     available_document_ids = list(
         Document.objects.filter(project=project, is_reserved=False, status='open')
@@ -47,11 +61,12 @@ def create_document_workflow(project, user, item_count):
 
 
 def start_review_document_workflow(request):
-
+    """Start a document review workflow using configured batch size."""
     project = TWFView.s_get_project(request)
     user = request.user
 
-    started_workflow = create_document_workflow(project, user, 5)
+    # Use None to let create_document_workflow use the configured batch size
+    started_workflow = create_document_workflow(project, user, item_count=None)
     if not started_workflow:
         messages.error(request, "No documents available for review.")
         return redirect('twf:documents_review')

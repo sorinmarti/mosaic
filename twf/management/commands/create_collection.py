@@ -3,7 +3,7 @@ import logging
 from django.contrib.auth.models import User
 from django.core.management import BaseCommand
 
-from twf.models import Collection, Project, CollectionItem
+from twf.models import Collection, Project, CollectionItem, Document
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
             collection.save(current_user=user)
             logger.info("Collection created.")
 
-        for document in project.documents.filter(project=project):
+        for document in Document.get_active_documents(project):
             logger.debug("Processing document: %s, document_id: %s", document, document.document_id)
             collection_item = CollectionItem(collection=collection,
                                              document_configuration={'annotations': []},

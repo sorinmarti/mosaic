@@ -122,11 +122,22 @@ def enrich_transkribus_metadata_task(self, project_id, user_id, **kwargs):
                 if 'transkribus_api' not in existing_metadata:
                     existing_metadata['transkribus_api'] = {}
 
-                existing_metadata['transkribus_api']['labels'] = enriched_data.get('labels', [])
+                doc_labels = enriched_data.get('labels', [])
+                existing_metadata['transkribus_api']['labels'] = doc_labels
                 existing_metadata['transkribus_api']['page_labels_available'] = enriched_data.get(
                     'page_labels_available', []
                 )
+
+                # Check for "Exclude" label (same logic as pages)
+                is_excluded = any(label.get('name', '').lower() == 'exclude' for label in doc_labels)
+                existing_metadata['transkribus_api']['is_excluded'] = is_excluded
+
                 doc_instance.metadata = existing_metadata
+
+                # Update is_ignored field based on "Exclude" label
+                if is_excluded:
+                    doc_instance.is_ignored = True
+
                 doc_instance.save(current_user=self.user)
 
                 # Update page metadata with labels and exclusion status

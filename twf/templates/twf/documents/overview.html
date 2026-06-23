@@ -75,6 +75,74 @@
                 </div>
             </div>
             
+            <!-- Transkribus Stats -->
+            {% if transkribus_stats %}
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Transkribus Metadata</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Page Status Distribution</h6>
+                            {% if transkribus_stats.page_status_counts %}
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="small text-muted">Pages with status:</span>
+                                    <span class="fw-bold">{{ transkribus_stats.total_pages_with_status }} / {{ transkribus_stats.total_pages }}</span>
+                                </div>
+                                {% for status, count in transkribus_stats.page_status_counts.items %}
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>{{ status }}:</span>
+                                    <span class="fw-bold">{{ count }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small">No page status information available.</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="border-bottom pb-2 mb-3">Page Label Distribution</h6>
+                            {% if transkribus_stats.page_label_counts %}
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="small text-muted">Pages with labels:</span>
+                                    <span class="fw-bold">{{ transkribus_stats.total_pages_with_labels }} / {{ transkribus_stats.total_pages }}</span>
+                                </div>
+                                {% for label, count in transkribus_stats.page_label_counts.items %}
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>{{ label }}:</span>
+                                    <span class="fw-bold">{{ count }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted small">No page label information available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if transkribus_stats.document_label_counts %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3">Document Label Distribution</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="small text-muted">Documents with labels:</span>
+                                <span class="fw-bold">{{ transkribus_stats.total_documents_with_labels }} / {{ transkribus_stats.total_documents }}</span>
+                            </div>
+                            <div class="row">
+                                {% for label, count in transkribus_stats.document_label_counts.items %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ label }}:</span>
+                                        <span class="fw-bold">{{ count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Tag Stats -->
             <div class="card mb-4">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">

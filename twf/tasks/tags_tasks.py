@@ -28,24 +28,35 @@ def create_page_tags(self, project_id, user_id, **kwargs):
             PageTag.objects.filter(page=page).delete()
             parsed_data = page.parsed_data
 
-            # Extract tags from parsed data and save them
-            num_tags = 0
-            for element in parsed_data["elements"]:
-                num_tags += len(element["element_data"]["custom_list_structure"])
-                for tag in element["element_data"]["custom_list_structure"]:
-                    if not "text" in tag:
-                        print("NO TEXT?", tag)  # TODO Fix me
-                    else:
-                        text = tag["text"].strip()
-                        copy_of_tag = copy.deepcopy(tag)
-                        copy_of_tag.pop("text")
-                        tag = PageTag(page=page, variation=text, variation_type=tag["type"],
-                                      additional_information=copy_of_tag)
-                        is_assigned = assign_tag(tag, self.user)
-                        if is_assigned:
-                            assigned_tags += 1
-                        total_tags += 1
-                        tag.save(current_user=self.user)
+            # Extract tags from parsed data using the unified extraction function
+            tags_data = extract_tags_from_parsed_data(parsed_data)
+            num_tags = len(tags_data)
+
+            for tag_data in tags_data:
+                # Create PageTag with new explicit positional fields
+                tag = PageTag(
+                    page=page,
+                    variation=tag_data['variation'],
+                    variation_type=tag_data['type'],
+                    # New explicit fields (simple-alto-parser v0.0.22+)
+                    region_index=tag_data.get('region_index', 0),
+                    line_index_in_region=tag_data.get('line_index_in_region', 0),
+                    line_index_global=tag_data.get('line_index_global', 0),
+                    line_text=tag_data.get('line_text', ''),
+                    offset_in_line=tag_data.get('offset', 0),
+                    length=tag_data.get('length', len(tag_data['variation'])),
+                    # DEPRECATED: Store legacy data in additional_information for backward compatibility
+                    additional_information={
+                        'line_id': tag_data.get('line_id', ''),
+                        'continued': tag_data.get('continued', False),
+                        'transkribus_tags': tag_data.get('transkribus_tags', {})
+                    }
+                )
+                is_assigned = assign_tag(tag, self.user)
+                if is_assigned:
+                    assigned_tags += 1
+                total_tags += 1
+                tag.save(current_user=self.user)
 
             page.num_tags = num_tags
 
@@ -137,7 +148,7 @@ def smart_sync_tags(project, user, celery_task):
             preserved_parked = old_tag.is_parked
 
             # Check if offset changed (transcription edit)
-            old_offset = old_tag.additional_information.get('offset', 0)
+            old_offset = old_tag.offset_in_line
             new_offset = new_tag_data['offset']
             if old_offset != new_offset:
                 doc_changes[page.document.id]['transcription_changes'] = True
@@ -150,12 +161,18 @@ def smart_sync_tags(project, user, celery_task):
 
             # Update tag with new data while preserving user modifications
             old_tag.variation = new_tag_data['variation']
+            # Update new explicit positional fields
+            old_tag.region_index = new_tag_data.get('region_index', 0)
+            old_tag.line_index_in_region = new_tag_data.get('line_index_in_region', 0)
+            old_tag.line_index_global = new_tag_data.get('line_index_global', 0)
+            old_tag.line_text = new_tag_data.get('line_text', '')
+            old_tag.offset_in_line = new_tag_data.get('offset', 0)
+            old_tag.length = new_tag_data.get('length', len(new_tag_data['variation']))
+            # DEPRECATED: Keep additional_information for backward compatibility
             old_tag.additional_information = {
-                'offset': new_tag_data['offset'],
-                'length': new_tag_data['length'],
-                'continued': new_tag_data['continued'],
-                'line_id': new_tag_data['line_id'],
-                'line_text': new_tag_data['line_text']
+                'line_id': new_tag_data.get('line_id', ''),
+                'continued': new_tag_data.get('continued', False),
+                'transkribus_tags': new_tag_data.get('transkribus_tags', {})
             }
             # PRESERVE: dictionary_entry, date_variation_entry, is_parked
             old_tag.save(current_user=user)
@@ -188,12 +205,18 @@ def smart_sync_tags(project, user, celery_task):
                 page=page,
                 variation=new_tag_data['variation'],
                 variation_type=new_tag_data['type'],
+                # New explicit positional fields (simple-alto-parser v0.0.22+)
+                region_index=new_tag_data.get('region_index', 0),
+                line_index_in_region=new_tag_data.get('line_index_in_region', 0),
+                line_index_global=new_tag_data.get('line_index_global', 0),
+                line_text=new_tag_data.get('line_text', ''),
+                offset_in_line=new_tag_data.get('offset', 0),
+                length=new_tag_data.get('length', len(new_tag_data['variation'])),
+                # DEPRECATED: Keep additional_information for backward compatibility
                 additional_information={
-                    'offset': new_tag_data['offset'],
-                    'length': new_tag_data['length'],
-                    'continued': new_tag_data['continued'],
-                    'line_id': new_tag_data['line_id'],
-                    'line_text': new_tag_data['line_text']
+                    'line_id': new_tag_data.get('line_id', ''),
+                    'continued': new_tag_data.get('continued', False),
+                    'transkribus_tags': new_tag_data.get('transkribus_tags', {})
                 }
             )
 

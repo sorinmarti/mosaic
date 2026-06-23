@@ -102,6 +102,7 @@ class BaseTWFTask(CeleryTask):
             project=self.project,
             user=self.user,
             status="STARTED",
+            task_type=self.name,
             title=f"Started: {self.name}",
             description=task_description,
             text=f"Task initiated at {self.start_datetime.strftime('%Y-%m-%d %H:%M:%S')}.\n"

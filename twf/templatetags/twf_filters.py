@@ -1,7 +1,21 @@
 """Render custom filters for the table."""
+import json
+
 from django import template
+from django.utils.safestring import mark_safe
 
 register = template.Library()
+
+
+@register.filter
+def pprint_json(value):
+    """Pretty-print a dict/list as formatted JSON for use in a textarea."""
+    if value is None:
+        return "{}"
+    try:
+        return json.dumps(value, indent=2, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return str(value)
 
 @register.inclusion_tag('twf/tables/filter_form.html')
 def twf_filter(my_twf_filter):
@@ -75,9 +89,10 @@ def get_item(dictionary, key):
 @register.filter
 def highlight_tag_in_context(tag):
     """
-    Highlight a tag within its line context.
+    Highlight a tag within its line context using PageTag's built-in method.
 
-    Searches for the tag variation in the page's text lines and highlights it.
+    Uses the new explicit positional fields (offset_in_line, length, line_text)
+    from simple-alto-parser v0.0.22+ for accurate highlighting.
 
     Args:
         tag: A PageTag instance
@@ -88,7 +103,12 @@ def highlight_tag_in_context(tag):
     from django.utils.html import escape
     from django.utils.safestring import mark_safe
 
-    # Get the page's parsed_data
+    # Use PageTag's built-in get_highlighted_context() method
+    # This uses the explicit positional fields for accurate highlighting
+    if tag.line_text and tag.offset_in_line >= 0:
+        return mark_safe(tag.get_highlighted_context(context_chars=100))
+
+    # Fallback for old data without explicit fields: search through parsed_data
     page = tag.page
     if not hasattr(page, 'parsed_data') or not page.parsed_data:
         return escape(tag.variation)

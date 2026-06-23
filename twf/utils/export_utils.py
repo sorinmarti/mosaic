@@ -41,8 +41,39 @@ class ExportCreator:
             if source_type == "static":
                 value = str(source)
             elif source_type == "db_field":
-                field_name = source.split(".")[1]
-                value = getattr(item, field_name, None)
+                # source format: "model.field" (e.g., "project.collection_id", "document.title")
+                parts = source.split(".", 1)
+                if len(parts) != 2:
+                    value = None
+                else:
+                    model_name, field_name = parts
+
+                    # Get the appropriate model instance
+                    if model_name == "project":
+                        target_item = self.project
+                    elif model_name == "document":
+                        if isinstance(item, Document):
+                            target_item = item
+                        elif isinstance(item, Page):
+                            target_item = item.document
+                        else:
+                            target_item = None
+                    elif model_name == "page":
+                        if isinstance(item, Page):
+                            target_item = item
+                        else:
+                            target_item = None
+                    elif model_name == "collection_item":
+                        # Handle collection items if needed
+                        target_item = item if hasattr(item, field_name) else None
+                    else:
+                        target_item = item  # Fallback to current item
+
+                    # Get the field value
+                    if target_item:
+                        value = getattr(target_item, field_name, None)
+                    else:
+                        value = None
             elif source_type == "metadata":
                 meta_source = getattr(item, "metadata", None)
                 if meta_source:
@@ -51,6 +82,53 @@ class ExportCreator:
                 value = item.get_text()
             elif source_type == "special":
                 value = self.compute_special_field(source, item)
+            elif source_type == "template":
+                # source is a template string like "vm_p_{document.document_id}_{page.tk_page_id}"
+                template = source
+
+                # Find all {field_name} placeholders
+                placeholders = re.findall(r'\{([^}]+)\}', template)
+
+                # Replace each placeholder with its value
+                for placeholder in placeholders:
+                    # placeholder format: "model.field" (e.g., "document.document_id")
+                    parts = placeholder.split(".", 1)
+                    if len(parts) != 2:
+                        placeholder_value = ""
+                    else:
+                        model_name, field_name = parts
+
+                        # Get the appropriate model instance
+                        if model_name == "project":
+                            target_item = self.project
+                        elif model_name == "document":
+                            if isinstance(item, Document):
+                                target_item = item
+                            elif isinstance(item, Page):
+                                target_item = item.document
+                            else:
+                                target_item = None
+                        elif model_name == "page":
+                            if isinstance(item, Page):
+                                target_item = item
+                            else:
+                                target_item = None
+                        elif model_name == "collection_item":
+                            # Handle collection items if needed
+                            target_item = item if hasattr(item, field_name) else None
+                        else:
+                            target_item = item
+
+                        # Get the field value
+                        if target_item:
+                            placeholder_value = str(getattr(target_item, field_name, ""))
+                        else:
+                            placeholder_value = ""
+
+                    # Replace the placeholder in the template
+                    template = template.replace(f"{{{placeholder}}}", placeholder_value)
+
+                value = template
 
             # Apply optional formatting; first ask for output type
             if output_type == "string":

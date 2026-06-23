@@ -1,5 +1,5 @@
 <div>
-    {% if record.dictionary_entry or record.date_variation_entry %}
+    {% if record.is_resolved %}
         <a href="{% url 'twf:tags_ungroup' record.pk %}" class="btn btn-sm btn-dark btn-sm mb-2" style="width: 100%;">Un-Group</a>
     {% else %}
         {% if record.is_parked %}

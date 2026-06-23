@@ -6,11 +6,27 @@ from twf.tasks.instant_tasks import start_related_task
 from twf.views.views_base import TWFView
 
 
-def create_collection_workflow(project, user, collection, item_count):
+def create_collection_workflow(project, user, collection, item_count=None):
     """
-    Create a new workflow for reviewing documents and pre-select the documents.
+    Create a new workflow for reviewing collection items and pre-select the items.
+
+    Parameters
+    ----------
+    project : Project
+        The project to create the workflow for
+    user : User
+        The user creating the workflow
+    collection : Collection
+        The collection to review items from
+    item_count : int, optional
+        Number of items to review. If None, uses configured batch size from workflow definition.
     """
-    # Get available document IDs that are not reserved and not reviewed
+    # Use configured batch size if item_count not provided
+    if item_count is None:
+        workflow_def = project.get_workflow_definition('review_collection')
+        item_count = workflow_def.get('batch_size', 5)
+
+    # Get available collection item IDs that are not reserved and not reviewed
     available_collection_item_ids = list(
         CollectionItem.objects.filter(collection=collection,
                                       is_reserved=False, status='open')
@@ -49,12 +65,13 @@ def create_collection_workflow(project, user, collection, item_count):
 
 
 def start_review_collection_workflow(request, collection_id):
-
+    """Start a collection review workflow using configured batch size."""
     project = TWFView.s_get_project(request)
     user = request.user
     collection = Collection.objects.get(pk=collection_id)
 
-    started_workflow = create_collection_workflow(project, user, collection, 5)
+    # Use None to let create_collection_workflow use the configured batch size
+    started_workflow = create_collection_workflow(project, user, collection, item_count=None)
     if not started_workflow:
         messages.error(request, "No items available for review.")
         return redirect('twf:collections_review')

@@ -4,111 +4,162 @@
 {% load twf_renders %}
 
 {% block content %}
-    <div class="row mb-3">
-        <div class="col-12">
+
+    <!-- Document Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            {% if previous_document_id %}
+                <a href="{% url 'twf:view_document' previous_document_id %}" class="btn btn-outline-secondary">
+                    <i class="fa fa-chevron-left me-2"></i>Previous
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    <i class="fa fa-chevron-left me-2"></i>Previous
+                </button>
+            {% endif %}
+        </div>
+        <div>
+            <h5 class="mb-0">{{ document.title|default:document.document_id }}</h5>
+        </div>
+        <div>
+            {% if next_document_id %}
+                <a href="{% url 'twf:view_document' next_document_id %}" class="btn btn-outline-secondary">
+                    Next<i class="fa fa-chevron-right ms-2"></i>
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary" disabled>
+                    Next<i class="fa fa-chevron-right ms-2"></i>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Document Tabs -->
+    <ul class="nav nav-tabs" id="documentTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="doc-metadata-tab" data-bs-toggle="tab" data-bs-target="#doc-metadata"
+                    type="button" role="tab" aria-controls="doc-metadata" aria-selected="true">
+                Document Metadata
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="additional-metadata-tab" data-bs-toggle="tab" data-bs-target="#additional-metadata"
+                    type="button" role="tab" aria-controls="additional-metadata" aria-selected="false">
+                Additional Metadata
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tags-tab" data-bs-toggle="tab" data-bs-target="#tags"
+                    type="button" role="tab" aria-controls="tags" aria-selected="false">
+                Tags
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sync-history-tab" data-bs-toggle="tab" data-bs-target="#sync-history"
+                    type="button" role="tab" aria-controls="sync-history" aria-selected="false">
+                Sync History
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="documentTabsContent">
+        <!-- Document Metadata Tab -->
+        <div class="tab-pane fade show active" id="doc-metadata" role="tabpanel" aria-labelledby="doc-metadata-tab">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">
-                        Document Details
-                        <button type="button" class="btn btn-sm btn-outline-primary float-end"
-                                onclick="updatePageMetadata({{ document.document_id }})"
-                                title="Refresh metadata from Transkribus API">
-                            <i class="fa fa-refresh me-1"></i>Update API Metadata
-                        </button>
-                    </h5>
-                    <table class="table">
+                    <button type="button" class="btn btn-sm btn-outline-primary float-end"
+                            onclick="updatePageMetadata({{ document.document_id }})"
+                            title="Refresh metadata from Transkribus API">
+                        <i class="fa fa-refresh me-1"></i>Update API Metadata
+                    </button>
+                    <h5 class="card-title mb-3">Basic Information</h5>
+                    <table class="table table-sm">
                         <tr>
-                            <td>Database ID / Transkribus ID</td>
-                            <td> {{ document.pk }} / {{ document.document_id }}</td>
+                            <td class="fw-bold" style="width: 200px;">Database ID / Transkribus ID</td>
+                            <td>{{ document.pk }} / {{ document.document_id }}</td>
                         </tr>
                         <tr>
-                            <td>Object data</td>
+                            <td class="fw-bold">Document Title</td>
+                            <td>{{ document.title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Pages</td>
                             <td>
-                                Created at {{ document.created_at }} by {{ document.created_by }}.
-                                Last updated by {{ document.modified_by }} at {{ document.modified_at }}.
+                                <span class="badge bg-primary">{{ document.pages.count }} total</span>
+                                {% if excluded_count > 0 %}
+                                    <span class="badge bg-secondary ms-1">{{ excluded_count }} excluded</span>
+                                {% endif %}
                             </td>
                         </tr>
                         <tr>
-                            <td>Document Title</td>
-                            <td> {{ document.title }}</td>
+                            <td class="fw-bold">Created</td>
+                            <td>{{ document.created_at|date:"Y-m-d H:i:s" }} by {{ document.created_by }}</td>
                         </tr>
                         <tr>
-                            <td>Tags in the document</td>
+                            <td class="fw-bold">Last Modified</td>
+                            <td>{{ document.modified_at|date:"Y-m-d H:i:s" }} by {{ document.modified_by }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Open in Transkribus</td>
                             <td>
-                                {% for page in document.pages.all %}
-                                    {% for tag in page.tags.all %}
-                                        {% if tag.dictionary_entry %}
-                                            <span class="badge bg-success">{{ tag.variation }}: {{ tag.dictionary_entry }}</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">{{ tag.variation }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endfor %}
+                                <a href="{{ document.get_transkribus_url }}" target="_blank" class="text-decoration-none">
+                                    <i class="fa fa-external-link me-1"></i>View on Transkribus
+                                </a>
                             </td>
-                        </tr>
-                        <tr>
-                            <td>Open in Transkribus</td>
-                            <td> <a href="{{ document.get_transkribus_url }}" target="_blank">{{ document.get_transkribus_url }}</a></td>
                         </tr>
                     </table>
                 </div>
             </div>
         </div>
-    </div>
 
-    <ul class="nav nav-tabs" id="documentTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pages-tab" data-bs-toggle="tab" data-bs-target="#pages" type="button" role="tab" aria-controls="pages" aria-selected="true">Pages</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="metadata-tab" data-bs-toggle="tab" data-bs-target="#metadata" type="button" role="tab" aria-controls="metadata" aria-selected="false">Metadata</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="sync-history-tab" data-bs-toggle="tab" data-bs-target="#sync-history" type="button" role="tab" aria-controls="sync-history" aria-selected="false">Sync History</button>
-        </li>
-    </ul>
-    <div class="tab-content mt-2" id="documentTabsContent">
-        <div class="tab-pane fade show active" id="pages" role="tabpanel" aria-labelledby="pages-tab">
-            <div class="row">
-                {% for page in document.pages.all %}
-                    {% if not page.is_ignored %}
-                        <div class="col-8 mb-3">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Page {{ page.tk_page_number }} ({{ page.tk_page_id }})</h5>
-                                    <p class="card-text small">
-                                        Last parsed: <span class="badge bg-secondary">{{ page.last_parsed_at }}</span>
-                                        Blocks: <span class="badge bg-secondary">{{ page.parsed_data|length }}</span>
-                                        Tags: <span class="badge bg-secondary">{{ page.num_tags }}</span>
-                                    </p>
-                                    <div class="card-text px-2 bg-light">
-                                        {% load twf_filters %}
-                                        {% for block in page|mark_tags_inline %}
-                                            <span class="badge bg-info">{{ block.structure_type }}</span>
-                                            <p class="small">
-                                                {% for line in block.text_lines %}
-                                                    {{ line }}<br/>
-                                                {% endfor %}
-                                            </p>
-                                            {% if not forloop.last %}
-                                                <hr/>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-4 mb-3">
-                            <img src="{{ page.parsed_data.file.imgUrl }}" class="img-fluid img-clickable" alt="Page image">
-                            <a href="{{ page.parsed_data.file.xmlUrl }}" target="_blank">Download PAGE.XML</a>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-        </div>
-        <div class="tab-pane fade" id="metadata" role="tabpanel" aria-labelledby="metadata-tab">
+        <!-- Additional Metadata Tab -->
+        <div class="tab-pane fade" id="additional-metadata" role="tabpanel" aria-labelledby="additional-metadata-tab">
             {% render_metadata document %}
         </div>
+
+        <!-- Tags Tab -->
+        <div class="tab-pane fade" id="tags" role="tabpanel" aria-labelledby="tags-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Tags in Document</h5>
+                </div>
+                <div class="card-body">
+                    {% for page in document.pages.all %}
+                        {% if page.tags.all %}
+                            <h6 class="mt-3 mb-2">Page {{ page.tk_page_number }}</h6>
+                            <div class="mb-3">
+                                {% for tag in page.tags.all %}
+                                    {% if tag.dictionary_entry %}
+                                        <a href="{% url 'twf:dictionaries_entry_view' tag.dictionary_entry.pk %}"
+                                           class="text-decoration-none"
+                                           data-bs-toggle="tooltip"
+                                           title="View dictionary entry: {{ tag.dictionary_entry.label }}">
+                                            <span class="badge bg-success me-1 mb-1">
+                                                {{ tag.variation }}: {{ tag.dictionary_entry }}
+                                            </span>
+                                        </a>
+                                    {% elif tag.date_variation_entry %}
+                                        <span class="badge bg-success me-1 mb-1"
+                                              data-bs-toggle="tooltip"
+                                              title="Normalized date: {{ tag.date_variation_entry.edtf_of_normalized_variation|default:'Unknown' }}">
+                                            {{ tag.variation }}: {{ tag.date_variation_entry.edtf_of_normalized_variation|default:tag.date_variation_entry }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger me-1 mb-1">
+                                            {{ tag.variation }}
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% empty %}
+                        <p class="text-muted">No tags found in this document.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync History Tab -->
         <div class="tab-pane fade" id="sync-history" role="tabpanel" aria-labelledby="sync-history-tab">
             <div class="card">
                 <div class="card-header">
@@ -223,6 +274,215 @@
             </div>
         </div>
     </div>
+
+    <!-- Pages Section -->
+    <div class="mt-4">
+        {% if excluded_count > 0 %}
+            <div class="alert alert-info mb-3">
+                <i class="fa fa-info-circle me-2"></i>
+                <strong>{{ excluded_count }} page(s) excluded:</strong>
+                {% for page in excluded_pages %}
+                    <span class="badge bg-secondary ms-1">Page {{ page.tk_page_number }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Pages</h3>
+            <div class="btn-group" role="group" aria-label="Page view mode">
+                <input type="radio" class="btn-check" name="pageViewMode" id="viewFull" autocomplete="off" checked>
+                <label class="btn btn-outline-primary btn-sm" for="viewFull" onclick="togglePageView('full')">
+                    <i class="fa fa-expand me-1"></i>Full View
+                </label>
+                <input type="radio" class="btn-check" name="pageViewMode" id="viewCompact" autocomplete="off">
+                <label class="btn btn-outline-primary btn-sm" for="viewCompact" onclick="togglePageView('compact')">
+                    <i class="fa fa-compress me-1"></i>Compact View
+                </label>
+            </div>
+        </div>
+
+        <!-- Full View -->
+        <div id="fullView" class="page-view">
+            {% for page in document.pages.all %}
+                {% if not page.is_ignored %}
+                    <div class="row mb-4 page-full-item">
+                        <div class="col-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Page {{ page.tk_page_number }} ({{ page.tk_page_id }})</h5>
+                                    <div>
+                                        <a href="{{ page.parsed_data.file.xmlUrl }}" target="_blank"
+                                           class="btn btn-sm btn-outline-secondary me-1"
+                                           data-bs-toggle="tooltip" title="Download PAGE XML">
+                                            <i class="fa fa-download"></i> XML
+                                        </a>
+                                        <a href="{{ page.get_transkribus_url }}" target="_blank"
+                                           class="btn btn-sm btn-outline-primary"
+                                           data-bs-toggle="tooltip" title="Open on Transkribus">
+                                            <i class="fa fa-external-link"></i> Transkribus
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text small mb-3">
+                                        Last parsed: <span class="badge bg-secondary">{{ page.last_parsed_at }}</span>
+                                        Blocks: <span class="badge bg-secondary">{{ page.parsed_data|length }}</span>
+                                        Tags: <span class="badge bg-secondary">{{ page.num_tags }}</span>
+                                    </p>
+
+                                    <!-- Page Tabs -->
+                                    <ul class="nav nav-tabs" id="pageTabs{{ page.pk }}" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="content-tab-{{ page.pk }}" data-bs-toggle="tab"
+                                                    data-bs-target="#content-{{ page.pk }}" type="button" role="tab"
+                                                    aria-controls="content-{{ page.pk }}" aria-selected="true">
+                                                Page Content
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="metadata-tab-{{ page.pk }}" data-bs-toggle="tab"
+                                                    data-bs-target="#metadata-{{ page.pk }}" type="button" role="tab"
+                                                    aria-controls="metadata-{{ page.pk }}" aria-selected="false">
+                                                Page Metadata
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content mt-3" id="pageTabsContent{{ page.pk }}">
+                                        <!-- Page Content Tab -->
+                                        <div class="tab-pane fade show active" id="content-{{ page.pk }}" role="tabpanel"
+                                             aria-labelledby="content-tab-{{ page.pk }}">
+                                            <div class="card-text px-2 bg-light">
+                                                {% load twf_filters %}
+                                                {% for block in page|mark_tags_inline %}
+                                                    <span class="badge bg-info">{{ block.structure_type }}</span>
+                                                    <p class="small">
+                                                        {% for line in block.text_lines %}
+                                                            {{ line }}<br/>
+                                                        {% endfor %}
+                                                    </p>
+                                                    {% if not forloop.last %}
+                                                        <hr/>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Page Metadata Tab -->
+                                        <div class="tab-pane fade" id="metadata-{{ page.pk }}" role="tabpanel"
+                                             aria-labelledby="metadata-tab-{{ page.pk }}">
+                                            {% render_metadata page %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <img src="{{ page.parsed_data.file.imgUrl }}" class="img-fluid img-clickable" alt="Page image">
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Compact View (Accordion) -->
+        <div id="compactView" class="page-view" style="display: none;">
+            <div class="accordion" id="pagesAccordion">
+                {% for page in document.pages.all %}
+                    {% if not page.is_ignored %}
+                        <div class="accordion-item page-compact-item">
+                            <h2 class="accordion-header" id="heading{{ page.pk }}">
+                                <button class="accordion-button collapsed d-flex justify-content-between" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#collapse{{ page.pk }}"
+                                        aria-expanded="false" aria-controls="collapse{{ page.pk }}">
+                                    <span>
+                                        <strong>Page {{ page.tk_page_number }}</strong>
+                                        <span class="ms-2 text-muted small">
+                                            (Blocks: {{ page.parsed_data|length }}, Tags: {{ page.num_tags }})
+                                        </span>
+                                    </span>
+                                    <span class="ms-auto me-3">
+                                        <a href="{{ page.parsed_data.file.xmlUrl }}" target="_blank"
+                                           class="btn btn-sm btn-outline-secondary me-1"
+                                           onclick="event.stopPropagation()"
+                                           data-bs-toggle="tooltip" title="Download PAGE XML">
+                                            <i class="fa fa-download"></i> XML
+                                        </a>
+                                        <a href="{{ page.get_transkribus_url }}" target="_blank"
+                                           class="btn btn-sm btn-outline-primary"
+                                           onclick="event.stopPropagation()"
+                                           data-bs-toggle="tooltip" title="Open on Transkribus">
+                                            <i class="fa fa-external-link"></i> Transkribus
+                                        </a>
+                                    </span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ page.pk }}" class="accordion-collapse collapse"
+                                 aria-labelledby="heading{{ page.pk }}" data-bs-parent="#pagesAccordion">
+                                <div class="accordion-body">
+                                    <p class="small mb-3">
+                                        Last parsed: <span class="badge bg-secondary">{{ page.last_parsed_at }}</span>
+                                    </p>
+
+                                    <!-- Page Tabs -->
+                                    <ul class="nav nav-tabs" id="pageTabsCompact{{ page.pk }}" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="content-tab-compact-{{ page.pk }}" data-bs-toggle="tab"
+                                                    data-bs-target="#content-compact-{{ page.pk }}" type="button" role="tab"
+                                                    aria-controls="content-compact-{{ page.pk }}" aria-selected="true">
+                                                Page Content
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="metadata-tab-compact-{{ page.pk }}" data-bs-toggle="tab"
+                                                    data-bs-target="#metadata-compact-{{ page.pk }}" type="button" role="tab"
+                                                    aria-controls="metadata-compact-{{ page.pk }}" aria-selected="false">
+                                                Page Metadata
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content mt-3" id="pageTabsContentCompact{{ page.pk }}">
+                                        <!-- Page Content Tab -->
+                                        <div class="tab-pane fade show active" id="content-compact-{{ page.pk }}" role="tabpanel"
+                                             aria-labelledby="content-tab-compact-{{ page.pk }}">
+                                            <div class="row">
+                                                <div class="col-8">
+                                                    <div class="px-2 bg-light">
+                                                        {% load twf_filters %}
+                                                        {% for block in page|mark_tags_inline %}
+                                                            <span class="badge bg-info">{{ block.structure_type }}</span>
+                                                            <p class="small">
+                                                                {% for line in block.text_lines %}
+                                                                    {{ line }}<br/>
+                                                                {% endfor %}
+                                                            </p>
+                                                            {% if not forloop.last %}
+                                                                <hr/>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <img src="{{ page.parsed_data.file.imgUrl }}" class="img-fluid img-clickable" alt="Page image">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Page Metadata Tab -->
+                                        <div class="tab-pane fade" id="metadata-compact-{{ page.pk }}" role="tabpanel"
+                                             aria-labelledby="metadata-tab-compact-{{ page.pk }}">
+                                            {% render_metadata page %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}
@@ -249,7 +509,6 @@
             .then(data => {
                 if (data.status === 'success') {
                     alert('Metadata update started! Task ID: ' + data.task_id);
-                    // Stay on the document page
                     window.location.reload();
                 } else {
                     alert('Error starting task: ' + (data.message || 'Unknown error'));
@@ -260,5 +519,46 @@
                 alert('Failed to start metadata update task');
             });
         }
+
+        function togglePageView(mode) {
+            const fullView = document.getElementById('fullView');
+            const compactView = document.getElementById('compactView');
+
+            if (mode === 'full') {
+                fullView.style.display = 'block';
+                compactView.style.display = 'none';
+            } else {
+                fullView.style.display = 'none';
+                compactView.style.display = 'block';
+            }
+        }
+
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+
+        // Keyboard navigation for documents (Left/Right arrow keys)
+        document.addEventListener('keydown', function(event) {
+            // Ignore if user is typing in an input/textarea
+            if (event.target.matches('input, textarea, select')) {
+                return;
+            }
+
+            {% if previous_document_id %}
+            if (event.key === 'ArrowLeft') {
+                window.location.href = "{% url 'twf:view_document' previous_document_id %}";
+            }
+            {% endif %}
+
+            {% if next_document_id %}
+            if (event.key === 'ArrowRight') {
+                window.location.href = "{% url 'twf:view_document' next_document_id %}";
+            }
+            {% endif %}
+        });
     </script>
 {% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'twf/base/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <p class="lead">Configure workflow definitions for document and collection review workflows.</p>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        <strong>About Workflow Configurations:</strong>
+        <ul class="mb-0">
+            <li>Define custom instructions, fields, and batch sizes for review workflows</li>
+            <li>Instructions support Markdown formatting for rich text</li>
+            <li>Custom fields allow you to collect structured data during review</li>
+            <li>Changes apply to new workflows (existing workflows are not affected)</li>
+        </ul>
+    </div>
+
+    <form method="post" id="workflow-settings-form">
+        {% csrf_token %}
+        <input type="hidden" name="active_tab" id="id_active_tab" value="document_review">
+
+        <ul class="nav nav-tabs mb-3" id="workflowTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="document-review-tab" data-bs-toggle="tab"
+                        data-bs-target="#document_review" type="button" role="tab" aria-controls="document_review"
+                        aria-selected="true">
+                    Document Review
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="collection-review-tab" data-bs-toggle="tab"
+                        data-bs-target="#collection_review" type="button" role="tab" aria-controls="collection_review"
+                        aria-selected="false">
+                    Collection Review
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="workflowTabContent">
+            <!-- Document Review Tab -->
+            <div class="tab-pane fade show active" id="document_review" role="tabpanel" aria-labelledby="document-review-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Configuration</h4>
+                        <div class="mb-3">
+                            {{ form.doc_review_title.label_tag }}
+                            {{ form.doc_review_title }}
+                            {% if form.doc_review_title.errors %}
+                                <div class="text-danger">{{ form.doc_review_title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.doc_review_description.label_tag }}
+                            {{ form.doc_review_description }}
+                            <small class="form-text text-muted">{{ form.doc_review_description.help_text }}</small>
+                            {% if form.doc_review_description.errors %}
+                                <div class="text-danger">{{ form.doc_review_description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.doc_review_instructions.label_tag }}
+                            {{ form.doc_review_instructions }}
+                            <small class="form-text text-muted">{{ form.doc_review_instructions.help_text }}</small>
+                            {% if form.doc_review_instructions.errors %}
+                                <div class="text-danger">{{ form.doc_review_instructions.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.doc_review_batch_size.label_tag }}
+                            {{ form.doc_review_batch_size }}
+                            <small class="form-text text-muted">{{ form.doc_review_batch_size.help_text }}</small>
+                            {% if form.doc_review_batch_size.errors %}
+                                <div class="text-danger">{{ form.doc_review_batch_size.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.doc_review_custom_fields.label_tag }}
+                            {{ form.doc_review_custom_fields }}
+                            <small class="form-text text-muted">{{ form.doc_review_custom_fields.help_text }}</small>
+                            {% if form.doc_review_custom_fields.errors %}
+                                <div class="text-danger">{{ form.doc_review_custom_fields.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Preview</h4>
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>Instructions Preview</strong>
+                            </div>
+                            <div class="card-body" id="doc-instructions-preview">
+                                <em class="text-muted">Instructions will appear here...</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collection Review Tab -->
+            <div class="tab-pane fade" id="collection_review" role="tabpanel" aria-labelledby="collection-review-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Configuration</h4>
+                        <div class="mb-3">
+                            {{ form.col_review_title.label_tag }}
+                            {{ form.col_review_title }}
+                            {% if form.col_review_title.errors %}
+                                <div class="text-danger">{{ form.col_review_title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.col_review_description.label_tag }}
+                            {{ form.col_review_description }}
+                            <small class="form-text text-muted">{{ form.col_review_description.help_text }}</small>
+                            {% if form.col_review_description.errors %}
+                                <div class="text-danger">{{ form.col_review_description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.col_review_instructions.label_tag }}
+                            {{ form.col_review_instructions }}
+                            <small class="form-text text-muted">{{ form.col_review_instructions.help_text }}</small>
+                            {% if form.col_review_instructions.errors %}
+                                <div class="text-danger">{{ form.col_review_instructions.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.col_review_batch_size.label_tag }}
+                            {{ form.col_review_batch_size }}
+                            <small class="form-text text-muted">{{ form.col_review_batch_size.help_text }}</small>
+                            {% if form.col_review_batch_size.errors %}
+                                <div class="text-danger">{{ form.col_review_batch_size.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.col_review_custom_fields.label_tag }}
+                            {{ form.col_review_custom_fields }}
+                            <small class="form-text text-muted">{{ form.col_review_custom_fields.help_text }}</small>
+                            {% if form.col_review_custom_fields.errors %}
+                                <div class="text-danger">{{ form.col_review_custom_fields.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Preview</h4>
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>Instructions Preview</strong>
+                            </div>
+                            <div class="card-body" id="col-instructions-preview">
+                                <em class="text-muted">Instructions will appear here...</em>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Save Workflow Settings</button>
+            <a href="{% url 'twf:project_overview' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Check if there's an active tab in the URL and show it
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+
+    if (activeTab) {
+        $(`.nav-tabs button[data-bs-target="#${activeTab}"]`).tab('show');
+        $('#id_active_tab').val(activeTab);
+    }
+
+    // Update the URL and hidden input when a new tab is clicked
+    $('.nav-tabs button').on('shown.bs.tab', function(e) {
+        const tabName = $(e.target).getAttribute('data-bs-target').substring(1); // Get tab name without #
+
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('tab', tabName);
+
+        // Update URL without reloading and set hidden input value
+        window.history.replaceState(null, null, newUrl);
+        $('#id_active_tab').val(tabName);
+    });
+
+    // Live preview for document review instructions
+    $('#id_doc_review_instructions').on('input', function() {
+        const markdown = $(this).val();
+        if (markdown.trim()) {
+            const html = marked.parse(markdown);
+            $('#doc-instructions-preview').html(html);
+        } else {
+            $('#doc-instructions-preview').html('<em class="text-muted">Instructions will appear here...</em>');
+        }
+    });
+
+    // Live preview for collection review instructions
+    $('#id_col_review_instructions').on('input', function() {
+        const markdown = $(this).val();
+        if (markdown.trim()) {
+            const html = marked.parse(markdown);
+            $('#col-instructions-preview').html(html);
+        } else {
+            $('#col-instructions-preview').html('<em class="text-muted">Instructions will appear here...</em>');
+        }
+    });
+
+    // Initialize previews on page load
+    const docInstructions = $('#id_doc_review_instructions').val();
+    if (docInstructions && docInstructions.trim()) {
+        const html = marked.parse(docInstructions);
+        $('#doc-instructions-preview').html(html);
+    }
+
+    const colInstructions = $('#id_col_review_instructions').val();
+    if (colInstructions && colInstructions.trim()) {
+        const html = marked.parse(colInstructions);
+        $('#col-instructions-preview').html(html);
+    }
+});
+</script>
+{% endblock %}

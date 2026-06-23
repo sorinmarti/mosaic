@@ -18,7 +18,8 @@ from twf.forms.filters.filters import TaskFilter, PromptFilter, NoteFilter
 from twf.forms.project.project_forms_batches import ProjectCopyBatchForm, DocumentExtractionBatchForm, \
     TranskribusEnrichmentBatchForm
 from twf.forms.project.project_forms import QueryDatabaseForm, GeneralSettingsForm, CredentialsForm, \
-    TaskSettingsForm, RepositorySettingsForm, PromptForm, NoteForm, PromptSettingsForm, UserPermissionForm, DisplaySettingsForm
+    TaskSettingsForm, RepositorySettingsForm, PromptForm, NoteForm, PromptSettingsForm, UserPermissionForm, \
+    DisplaySettingsForm, WorkflowSettingsForm
 from twf.models import Page, PageTag, Prompt, Task, Note, UserProfile
 from twf.permissions import check_permission, ENTITY_TYPES
 from twf.tables.tables_project import TaskTable, PromptTable, NoteTable, ProjectUserTable
@@ -66,6 +67,8 @@ class TWFProjectView(LoginRequiredMixin, TWFView):
                      'value': 'Repository Settings', 'permission': 'import_export.manage'},
                     {'url': reverse('twf:project_settings_display'),
                      'value': 'Display Settings', 'permission': 'project.manage'},
+                    {'url': reverse('twf:project_settings_workflows'),
+                     'value': 'Workflow Settings', 'permission': 'project.manage'},
                     {'url': reverse('twf:user_management'),
                      'value': 'User Management', 'permission': 'project.manage'},
                 ]
@@ -598,6 +601,32 @@ class TWFProjectDisplaySettingsView(FormView, TWFProjectView):
 
         # Retrieve the active tab from form data and include it in the success URL
         active_tab = form.cleaned_data.get('active_tab', 'table')
+        success_url = f"{self.success_url}?tab={active_tab}"
+
+        return HttpResponseRedirect(success_url)
+
+
+class TWFProjectWorkflowSettingsView(FormView, TWFProjectView):
+    """View for workflow settings."""
+
+    template_name = 'twf/project/settings/settings_workflows.html'
+    page_title = 'Workflow Settings'
+    form_class = WorkflowSettingsForm
+    success_url = reverse_lazy('twf:project_settings_workflows')
+
+    def get_form_kwargs(self):
+        """Get the form kwargs."""
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = self.get_project()
+        return kwargs
+
+    def form_valid(self, form):
+        """Handle the form submission."""
+        form.save()
+        messages.success(self.request, 'Workflow settings updated successfully.')
+
+        # Retrieve the active tab from form data and include it in the success URL
+        active_tab = self.request.POST.get('active_tab', 'document_review')
         success_url = f"{self.success_url}?tab={active_tab}"
 
         return HttpResponseRedirect(success_url)

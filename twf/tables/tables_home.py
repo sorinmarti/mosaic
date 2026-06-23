@@ -108,7 +108,7 @@ class UserManagementTable(tables.Table):
                     '<span class="badge bg-warning">{}</span>',
                     owned_count
                 )
-        return format_html('<span class="text-muted">0</span>')
+        return format_html('<span class="text-muted">{}</span>', '0')
 
     def render_status(self, record):
         status_tags = []

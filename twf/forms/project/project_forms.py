@@ -877,6 +877,175 @@ class TaskSettingsForm(forms.ModelForm):
         return cleaned_data
 
 
+class WorkflowSettingsForm(forms.ModelForm):
+    """Form for configuring workflow definitions."""
+
+    # Document Review Workflow
+    doc_review_title = forms.CharField(
+        required=False,
+        label="Workflow Title",
+        initial="Review Documents",
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    doc_review_description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+        label="Short Description",
+        help_text="Brief description of what this workflow does"
+    )
+    doc_review_instructions = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 10, 'class': 'form-control'}),
+        label="Detailed Instructions (Markdown)",
+        help_text="Provide guidance for reviewers. Supports Markdown formatting."
+    )
+    doc_review_batch_size = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=50,
+        initial=5,
+        label="Batch Size",
+        help_text="Number of documents to review per workflow session",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    doc_review_custom_fields = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control font-monospace'}),
+        label="Custom Fields (JSON)",
+        help_text='Define custom fields to collect data during review. Example: '
+                  '{"quality": {"type": "select", "label": "Quality", "choices": [["1", "Poor"], ["2", "Good"]]}}'
+    )
+
+    # Collection Review Workflow
+    col_review_title = forms.CharField(
+        required=False,
+        label="Workflow Title",
+        initial="Review Collection",
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    col_review_description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+        label="Short Description",
+        help_text="Brief description of what this workflow does"
+    )
+    col_review_instructions = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 10, 'class': 'form-control'}),
+        label="Detailed Instructions (Markdown)",
+        help_text="Provide guidance for reviewers. Supports Markdown formatting."
+    )
+    col_review_batch_size = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=50,
+        initial=5,
+        label="Batch Size",
+        help_text="Number of collection items to review per workflow session",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    col_review_custom_fields = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 5, 'class': 'form-control font-monospace'}),
+        label="Custom Fields (JSON)",
+        help_text='Define custom fields to collect data during review. Example: '
+                  '{"notes": {"type": "textarea", "label": "Review Notes"}}'
+    )
+
+    class Meta:
+        model = Project
+        fields = ['conf_tasks']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Pre-populate form with existing workflow definitions
+        if self.instance and self.instance.conf_tasks:
+            workflow_defs = self.instance.conf_tasks.get('workflow_definitions', {})
+
+            # Document review
+            doc_def = workflow_defs.get('review_documents', {})
+            if doc_def:
+                self.initial['doc_review_title'] = doc_def.get('title', 'Review Documents')
+                self.initial['doc_review_description'] = doc_def.get('description', '')
+                self.initial['doc_review_instructions'] = doc_def.get('instructions', '')
+                self.initial['doc_review_batch_size'] = doc_def.get('batch_size', 5)
+                doc_fields = doc_def.get('fields', {})
+                if doc_fields:
+                    self.initial['doc_review_custom_fields'] = json.dumps(doc_fields, indent=2)
+
+            # Collection review
+            col_def = workflow_defs.get('review_collection', {})
+            if col_def:
+                self.initial['col_review_title'] = col_def.get('title', 'Review Collection')
+                self.initial['col_review_description'] = col_def.get('description', '')
+                self.initial['col_review_instructions'] = col_def.get('instructions', '')
+                self.initial['col_review_batch_size'] = col_def.get('batch_size', 5)
+                col_fields = col_def.get('fields', {})
+                if col_fields:
+                    self.initial['col_review_custom_fields'] = json.dumps(col_fields, indent=2)
+
+    def clean_doc_review_custom_fields(self):
+        """Validate document review custom fields JSON."""
+        raw_value = self.cleaned_data.get('doc_review_custom_fields')
+        if raw_value and raw_value.strip():
+            try:
+                return json.loads(raw_value)
+            except json.JSONDecodeError as e:
+                raise forms.ValidationError(f"Must be valid JSON: {str(e)}")
+        return {}
+
+    def clean_col_review_custom_fields(self):
+        """Validate collection review custom fields JSON."""
+        raw_value = self.cleaned_data.get('col_review_custom_fields')
+        if raw_value and raw_value.strip():
+            try:
+                return json.loads(raw_value)
+            except json.JSONDecodeError as e:
+                raise forms.ValidationError(f"Must be valid JSON: {str(e)}")
+        return {}
+
+    def save(self, commit=True):
+        """Save workflow definitions to conf_tasks."""
+        # Get existing conf_tasks
+        existing_conf_tasks = self.instance.conf_tasks or {}
+
+        # Build workflow_definitions structure
+        workflow_definitions = {}
+
+        # Document review
+        doc_fields = self.cleaned_data.get('doc_review_custom_fields', {})
+        workflow_definitions['review_documents'] = {
+            'title': self.cleaned_data.get('doc_review_title', 'Review Documents'),
+            'description': self.cleaned_data.get('doc_review_description', ''),
+            'instructions': self.cleaned_data.get('doc_review_instructions', ''),
+            'instruction_format': 'markdown',
+            'fields': doc_fields,
+            'batch_size': self.cleaned_data.get('doc_review_batch_size', 5)
+        }
+
+        # Collection review
+        col_fields = self.cleaned_data.get('col_review_custom_fields', {})
+        workflow_definitions['review_collection'] = {
+            'title': self.cleaned_data.get('col_review_title', 'Review Collection'),
+            'description': self.cleaned_data.get('col_review_description', ''),
+            'instructions': self.cleaned_data.get('col_review_instructions', ''),
+            'instruction_format': 'markdown',
+            'fields': col_fields,
+            'batch_size': self.cleaned_data.get('col_review_batch_size', 5)
+        }
+
+        # Merge with existing conf_tasks
+        existing_conf_tasks['workflow_definitions'] = workflow_definitions
+        self.instance.conf_tasks = existing_conf_tasks
+
+        if commit:
+            self.instance.save()
+        return self.instance
+
+
 class RepositorySettingsForm(forms.ModelForm):
     """Form for updating repository settings."""
 

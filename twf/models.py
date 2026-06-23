@@ -610,6 +610,47 @@ class Project(TimeStampedModel):
             return {}
         return self.conf_tasks.get(service, {})
 
+    def get_workflow_definition(self, workflow_type):
+        """Return workflow definition with defaults for backward compatibility.
+
+        Parameters
+        ----------
+        workflow_type : str
+            The type of workflow ('review_documents' or 'review_collection')
+
+        Returns
+        -------
+        dict
+            Workflow definition with fields: title, description, instructions,
+            instruction_format, fields, batch_size
+        """
+        definitions = self.conf_tasks.get('workflow_definitions', {})
+        defaults = {
+            'review_documents': {
+                'title': 'Review Documents',
+                'description': 'Review documents in the project',
+                'instructions': '',
+                'instruction_format': 'markdown',
+                'fields': {},
+                'batch_size': 5
+            },
+            'review_collection': {
+                'title': 'Review Collection',
+                'description': 'Review collection items',
+                'instructions': '',
+                'instruction_format': 'markdown',
+                'fields': {},
+                'batch_size': 5
+            }
+        }
+        # Deep merge configured with defaults
+        default = defaults.get(workflow_type, {})
+        configured = definitions.get(workflow_type, {})
+        result = {**default, **configured}
+        if 'fields' in default:
+            result['fields'] = {**default['fields'], **configured.get('fields', {})}
+        return result
+
     def get_transkribus_url(self):
         """Return the URL to the Transkribus collection."""
         return f"https://app.transkribus.org/collection/{self.collection_id}"
@@ -693,6 +734,27 @@ class Task(models.Model):
     meta = models.JSONField(default=dict, blank=True)
     """Additional metadata for the task."""
 
+    task_type = models.CharField(max_length=255, default='', blank=True)
+    """The type/name of the Celery task."""
+
+    category = models.CharField(max_length=100, null=True, blank=True)
+    """Optional category for grouping tasks."""
+
+    total_items = models.IntegerField(null=True, blank=True)
+    """Total number of items to process."""
+
+    processed_items = models.IntegerField(default=0)
+    """Number of items processed so far."""
+
+    successful_items = models.IntegerField(default=0)
+    """Number of items successfully processed."""
+
+    failed_items = models.IntegerField(default=0)
+    """Number of items that failed processing."""
+
+    workflow_steps = models.JSONField(default=list, blank=True)
+    """Workflow step tracking data."""
+
     def __str__(self):
         return f"Task - {self.celery_task_id} ({self.status})"
 
@@ -718,7 +780,9 @@ class Document(TimeStampedModel):
     last_parsed_at : DateTimeField
         The last time the document was parsed.
     is_parked : BooleanField
-        Whether the document is parked.
+        Whether the document is parked (MOSAIC workflow state).
+    is_ignored : BooleanField
+        Whether the document is excluded from corpus (Transkribus 'Exclude' label).
     workflow_remarks : TextField
         Workflow remarks for the document.
     """
@@ -726,7 +790,6 @@ class Document(TimeStampedModel):
     STATUS_CHOICES = [
         ('open', 'Open'),
         ('needs_tk_work', 'Needs Correction on Transkribus'),
-        ('irrelevant', 'Is Irrelevant'),
         ('reviewed', 'Reviewed'),
     ]
 
@@ -746,7 +809,10 @@ class Document(TimeStampedModel):
     """The last time the document was parsed."""
 
     is_parked = models.BooleanField(default=False, blank=True)
-    """Whether the document is parked."""
+    """Whether the document is parked (MOSAIC workflow state for deferred processing)."""
+
+    is_ignored = models.BooleanField(default=False)
+    """Whether the document is excluded from corpus (set from Transkribus 'Exclude' label)."""
 
     workflow_remarks = models.TextField(blank=True, default='')
     """Workflow remarks for the document."""
@@ -765,8 +831,23 @@ class Document(TimeStampedModel):
         return f"https://app.transkribus.org/collection/{self.project.collection_id}/doc/{self.document_id}"
 
     def get_active_pages(self):
-        """Return the active pages of the document."""
+        """Return the active pages of the document (non-excluded pages)."""
         return self.pages.filter(is_ignored=False)
+
+    @staticmethod
+    def get_active_documents(project):
+        """Return active (non-excluded) documents for a project.
+
+        Excludes documents with is_ignored=True (Transkribus 'Exclude' label).
+        Does NOT exclude parked documents (is_parked=True) as those are workflow state.
+
+        Args:
+            project: Project instance
+
+        Returns:
+            QuerySet of non-excluded documents
+        """
+        return Document.objects.filter(project=project, is_ignored=False)
 
     def get_text(self):
         text = ""
@@ -997,6 +1078,11 @@ class Page(TimeStampedModel):
                 text += element['text'] + "\n"
         return text # TODO CHeck if this is correct
 
+    def get_transkribus_url(self):
+        """Return the URL to the Transkribus page."""
+        return (f"https://app.transkribus.org/collection/{self.document.project.collection_id}/doc/"
+                f"{self.document.document_id}/edit?pageNr={self.tk_page_number}")
+
     @staticmethod
     def get_distinct_metadata_keys():
         keys = set()
@@ -1195,11 +1281,23 @@ class PageTag(TimeStampedModel):
     dictionary_entry : ForeignKey
         The dictionary entry this tag is assigned to.
     additional_information : JSONField
-        Additional information about the tag.
+        Additional information about the tag (DEPRECATED - use specific fields).
     date_variation_entry : ForeignKey
         The date variation entry.
     is_parked : BooleanField
         Whether the tag is parked.
+    region_index : IntegerField
+        Index of the TextRegion in reading order (0-based).
+    line_index_in_region : IntegerField
+        Index of line within region by readingOrder (0-based).
+    line_index_global : IntegerField
+        Sequential line number across entire page (0-based).
+    line_text : TextField
+        The actual text of this specific line (not joined region text).
+    offset_in_line : IntegerField
+        Character offset within the specific line.
+    length : IntegerField
+        Length of the tag text.
     """
 
     page = models.ForeignKey(Page, related_name='tags', on_delete=models.CASCADE)
@@ -1224,9 +1322,41 @@ class PageTag(TimeStampedModel):
     is_parked = models.BooleanField(default=False)
     """Whether the tag is parked."""
 
+    # New fields for clean positional tracking (from simple-alto-parser v0.0.22+)
+    region_index = models.IntegerField(default=0)
+    """Index of the TextRegion in reading order (0-based)"""
+
+    line_index_in_region = models.IntegerField(default=0)
+    """Index of line within region by readingOrder (0-based)"""
+
+    line_index_global = models.IntegerField(default=0)
+    """Sequential line number across entire page (0-based)"""
+
+    line_text = models.TextField(default='', blank=True)
+    """The actual text of this specific line (not joined region text)"""
+
+    offset_in_line = models.IntegerField(default=0)
+    """Character offset within the specific line"""
+
+    length = models.IntegerField(default=0)
+    """Length of the tag text"""
+
     class Meta:
         """Meta options for the PageTag model."""
         ordering = ['variation']
+
+    def is_resolved(self):
+        """
+        Return True if the tag has been resolved.
+
+        A tag is considered resolved if it has been assigned to either:
+        - A dictionary entry (dictionary_entry is not None), or
+        - A date variation entry (date_variation_entry is not None)
+
+        Future resolution criteria (e.g., specific additional_information fields)
+        can be added here to centralize the logic.
+        """
+        return self.dictionary_entry is not None or self.date_variation_entry is not None
 
     def get_date(self):
         """Return the date in the format YYYY-MM-DD."""
@@ -1245,7 +1375,56 @@ class PageTag(TimeStampedModel):
     def get_transkribus_url(self):
         """Return the URL to the Transkribus page."""
         return (f"https://app.transkribus.org/collection/{self.page.document.project.collection_id}/doc/"
-                f"{self.page.document.document_id}/detail/{self.page.tk_page_number}?view=combined")
+                f"{self.page.document.document_id}/edit?pageNr={self.page.tk_page_number}")
+
+    def get_context(self, context_chars=50):
+        """
+        Get KWIC (KeyWord In Context) view.
+
+        Args:
+            context_chars: Number of characters to show before/after the tag
+
+        Returns:
+            dict with 'before', 'tag', 'after', 'full_line' keys
+        """
+        if not self.line_text:
+            return {
+                'before': '',
+                'tag': self.variation,
+                'after': '',
+                'full_line': ''
+            }
+
+        # IMPORTANT: PAGE XML offsets appear to be off by 1 (possibly 1-based indexing issue)
+        # Adding +1 correction to get accurate text extraction
+        adjusted_offset = self.offset_in_line + 1
+
+        start = max(0, adjusted_offset - context_chars)
+        end = min(len(self.line_text), adjusted_offset + self.length + context_chars)
+
+        before = self.line_text[start:adjusted_offset]
+        tag_text = self.line_text[adjusted_offset:adjusted_offset + self.length]
+        after = self.line_text[adjusted_offset + self.length:end]
+
+        return {
+            'before': before,
+            'tag': tag_text,
+            'after': after,
+            'full_line': self.line_text
+        }
+
+    def get_highlighted_context(self, context_chars=50):
+        """
+        Get HTML with highlighted tag.
+
+        Args:
+            context_chars: Number of characters to show before/after the tag
+
+        Returns:
+            HTML string with tag highlighted
+        """
+        ctx = self.get_context(context_chars)
+        return f'{ctx["before"]}<mark class="bg-warning">{ctx["tag"]}</mark>{ctx["after"]}'
 
     def __str__(self):
         """Return the string representation of the PageTag."""
@@ -1610,6 +1789,42 @@ class Workflow(models.Model):
     def has_more_items(self):
         """Check if there are more items to work on."""
         return self.current_item_index+1 < self.item_count
+
+    def get_workflow_definition(self):
+        """Get workflow definition from project configuration.
+
+        Returns
+        -------
+        dict
+            Workflow definition containing title, description, instructions,
+            instruction_format, fields, and batch_size
+        """
+        return self.project.get_workflow_definition(self.workflow_type)
+
+    def get_instructions(self):
+        """Get workflow instructions as HTML.
+
+        Returns
+        -------
+        str
+            HTML-formatted instructions (from markdown if configured)
+        """
+        definition = self.get_workflow_definition()
+        instructions = definition.get('instructions', '')
+        if instructions and definition.get('instruction_format') == 'markdown':
+            from markdown import markdown
+            return markdown(instructions)
+        return instructions
+
+    def get_custom_fields(self):
+        """Get custom field definitions.
+
+        Returns
+        -------
+        dict
+            Dictionary of custom field definitions
+        """
+        return self.get_workflow_definition().get('fields', {})
 
 
 class ExportConfiguration(TimeStampedModel):

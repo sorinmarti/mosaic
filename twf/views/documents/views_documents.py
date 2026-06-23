@@ -102,10 +102,10 @@ class TWFDocumentsOverviewView(TWFDocumentView):
         in_progress_documents = documents.filter(status='in_progress').count()
         parked_documents = documents.filter(is_parked=True).count()
         
-        # Ignored documents statistics
+        # Excluded documents/pages statistics (Transkribus 'Exclude' label)
         ignored_pages = sum(doc.pages.filter(is_ignored=True).count() for doc in documents)
         ignored_percentage = (ignored_pages / total_pages * 100) if total_pages > 0 else 0
-        ignored_documents_count = documents.filter(is_parked=True).count()
+        ignored_documents_count = documents.filter(is_ignored=True).count()
         ignored_documents_percentage = (ignored_documents_count / total_documents * 100) if total_documents > 0 else 0
 
         # Gather metadata keys from all documents
@@ -156,9 +156,14 @@ class TWFDocumentsOverviewView(TWFDocumentView):
             'tag_types': tag_types,
         }
 
+        # Get Transkribus statistics
+        from twf.utils.project_statistics import get_transkribus_statistics
+        transkribus_stats = get_transkribus_statistics(project)
+
         context.update({
             'doc_stats': doc_stats,
             'tag_stats': tag_stats,
+            'transkribus_stats': transkribus_stats,
             'metadata_keys': sorted(metadata_keys),
             'sample_document': sample_document,
             'recent_documents': recent_documents,
@@ -178,9 +183,18 @@ class TWFDocumentsBrowseView(SingleTableView, FilterView, TWFDocumentView):
     strict = False
 
     def get_queryset(self):
-        """Get the queryset for the view."""
+        """Get the queryset for the view.
+
+        By default, excludes documents with is_ignored=True (Transkribus 'Exclude' label).
+        Users can see excluded documents by using the 'Show excluded documents only' filter.
+        """
         # Get all documents for the current project
         queryset = Document.objects.filter(project_id=self.request.session.get('project_id'))
+
+        # By default, exclude ignored documents unless explicitly filtering for them
+        if not self.request.GET.get('is_ignored'):
+            queryset = queryset.filter(is_ignored=False)
+
         return queryset
     
     def get(self, request, *args, **kwargs):
@@ -222,8 +236,9 @@ class TWFDocumentsBrowseView(SingleTableView, FilterView, TWFDocumentView):
         # Document statistics for the header
         stats = {
             'total': all_documents.count(),
-            'active': all_documents.filter(is_parked=False).count(),
-            'ignored': all_documents.filter(is_parked=True).count(),
+            'active': all_documents.filter(is_ignored=False).count(),
+            'excluded': all_documents.filter(is_ignored=True).count(),
+            'parked': all_documents.filter(is_parked=True).count(),
             'reviewed': all_documents.filter(status='reviewed').count()
         }
         context['document_stats'] = stats
@@ -505,12 +520,13 @@ class TWFDocumentsSearchView(FormView, TWFDocumentView):
             }
             context['result_stats'] = stats
             
-        # Add document statistics 
+        # Add document statistics
         all_documents = Document.objects.filter(project=self.get_project())
         context['document_stats'] = {
             'total': all_documents.count(),
-            'active': all_documents.filter(is_parked=False).count(),
-            'ignored': all_documents.filter(is_parked=True).count(),
+            'active': all_documents.filter(is_ignored=False).count(),
+            'excluded': all_documents.filter(is_ignored=True).count(),
+            'parked': all_documents.filter(is_parked=True).count(),
             'reviewed': all_documents.filter(status='reviewed').count()
         }
             
@@ -571,7 +587,40 @@ class TWFDocumentDetailView(TWFDocumentView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["document"] = Document.objects.get(pk=self.kwargs.get('pk'))
+        document = Document.objects.get(pk=self.kwargs.get('pk'))
+        context["document"] = document
+
+        # Count excluded/ignored pages
+        all_pages = document.pages.all()
+        excluded_pages = [p for p in all_pages if p.is_ignored]
+        context["excluded_pages"] = excluded_pages
+        context["excluded_count"] = len(excluded_pages)
+
+        # Get previous and next documents for navigation
+        project = self.get_project()
+        documents = Document.objects.filter(project=project).order_by('document_id')
+
+        # Find current document's position
+        doc_list = list(documents.values_list('pk', flat=True))
+        try:
+            current_index = doc_list.index(document.pk)
+
+            # Get previous document
+            if current_index > 0:
+                context['previous_document_id'] = doc_list[current_index - 1]
+            else:
+                context['previous_document_id'] = None
+
+            # Get next document
+            if current_index < len(doc_list) - 1:
+                context['next_document_id'] = doc_list[current_index + 1]
+            else:
+                context['next_document_id'] = None
+        except ValueError:
+            # Document not in list (shouldn't happen)
+            context['previous_document_id'] = None
+            context['next_document_id'] = None
+
         return context
 
     def get_breadcrumbs(self):
@@ -605,6 +654,10 @@ class TWFDocumentReviewView(TWFDocumentView):
 
         if not workflow:
             context['has_active_workflow'] = False
+            # Still provide workflow definition for the start page
+            context['workflow_definition'] = self.get_project().get_workflow_definition('review_documents')
+            context['workflow_instructions'] = ''
+            context['custom_fields'] = {}
             return context
 
         context['has_active_workflow'] = True
@@ -614,6 +667,20 @@ class TWFDocumentReviewView(TWFDocumentView):
         context['workflow'] = workflow
         context['document'] = next_document
 
+        # Add workflow configuration
+        context['workflow_definition'] = workflow.get_workflow_definition()
+        context['workflow_instructions'] = workflow.get_instructions()
+        context['custom_fields'] = workflow.get_custom_fields()
+
+        # Split pages into actual and excluded for preview
+        if next_document:
+            all_pages = next_document.pages.all()
+            context['actual_pages'] = [p for p in all_pages if not p.is_ignored]
+            context['excluded_pages'] = [p for p in all_pages if p.is_ignored]
+            context['workflow_remarks'] = next_document.workflow_remarks
+        else:
+            context['workflow_remarks'] = ''
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -622,7 +689,7 @@ class TWFDocumentReviewView(TWFDocumentView):
 
         if not workflow:
             messages.error(request, "No active workflow found.")
-            return redirect('twf:documents_review')  # Replace with the actual name of the review URL
+            return redirect('twf:documents_review')
 
         document_id = request.POST.get('document_id')
         action = request.POST.get('action')
@@ -631,13 +698,39 @@ class TWFDocumentReviewView(TWFDocumentView):
             document = Document.objects.filter(id=document_id).first()
 
             if document:
+                # Save custom field data to document.metadata
+                custom_fields = workflow.get_custom_fields()
+                if custom_fields:
+                    workflow_data = {}
+                    for field_name in custom_fields.keys():
+                        field_value = request.POST.get(field_name)
+                        if field_value:
+                            workflow_data[field_name] = field_value
+
+                    if workflow_data:
+                        if 'workflow_review' not in document.metadata:
+                            document.metadata['workflow_review'] = {}
+                        document.metadata['workflow_review'].update(workflow_data)
+
+                # Save workflow remarks
+                workflow_remarks = request.POST.get('workflow_remarks', '').strip()
+                if workflow_remarks:
+                    document.workflow_remarks = workflow_remarks
+
                 # Mark the document based on user action
                 if action == 'set_reviewed':
                     document.status = 'reviewed'
                 elif action == 'set_parked':
                     document.is_parked = True
                 elif action == 'set_irrelevant':
-                    document.status = 'irrelevant'
+                    # Mark as needs TK work (to set Exclude label in Transkribus)
+                    document.status = 'needs_tk_work'
+                    # Append to workflow_remarks if not already mentioned
+                    irrelevant_note = "Marked as irrelevant - needs Exclude label in Transkribus"
+                    if not workflow_remarks:
+                        document.workflow_remarks = irrelevant_note
+                    elif "irrelevant" not in workflow_remarks.lower():
+                        document.workflow_remarks += f"\n[{irrelevant_note}]"
                 elif action == 'set_needs_work':
                     document.status = 'needs_tk_work'
 

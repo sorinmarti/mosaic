@@ -159,18 +159,49 @@ document.addEventListener('DOMContentLoaded', function () {
             const select = document.createElement('select');
             select.classList.add('form-select', 'mb-2');
 
-            const fields = dbFields[section] || [];
-            fields.forEach(fieldTuple => {
-                const [fieldName, label, sampleValue] = fieldTuple;
+            // Define hierarchical field access - parent fields available to children
+            const sectionLabels = {
+                'general': 'Project Fields',
+                'documents': 'Document Fields',
+                'pages': 'Page Fields',
+                'items': 'Collection Item Fields',
+                'entries': 'Dictionary Entry Fields',
+                'tags': 'Tag Fields'
+            };
 
-                const option = document.createElement('option');
-                option.value = fieldName;
-                option.textContent = label;
+            // Define which fields are available for each section (hierarchical)
+            const availableFieldsMap = {
+                'general': ['general'],  // Only project fields
+                'documents': ['general', 'documents'],  // Project + Document fields
+                'pages': ['general', 'documents', 'pages'],  // Project + Document + Page fields
+                'items': ['general', 'items'],  // Project + Collection Item fields
+                'entries': ['general', 'entries'],  // Project + Dictionary Entry fields
+                'tags': ['general', 'tags']  // Project + Tag fields
+            };
 
-                if (fieldName === selectedSource) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
+            // Get the list of field sections available for current section
+            const availableSections = availableFieldsMap[section] || [section];
+
+            // For each available section, create an optgroup
+            availableSections.forEach(sectionKey => {
+                const fields = allDbFields[sectionKey] || [];
+                if (fields.length === 0) return;
+
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = sectionLabels[sectionKey] || sectionKey;
+
+                fields.forEach(fieldTuple => {
+                    const [fieldName, label, sampleValue] = fieldTuple;
+                    const option = document.createElement('option');
+                    option.value = fieldName;
+                    option.textContent = label;
+                    if (fieldName === selectedSource) {
+                        option.selected = true;
+                    }
+                    optgroup.appendChild(option);
+                });
+
+                select.appendChild(optgroup);
             });
 
             container.appendChild(select);
@@ -182,13 +213,16 @@ document.addEventListener('DOMContentLoaded', function () {
             container.appendChild(sampleDiv);
 
             function updateSampleValue(selectedField) {
-                const fields = dbFields[section] || [];
-                const match = fields.find(([fieldName]) => fieldName === selectedField);
-                if (match) {
-                    sampleDiv.textContent = `Sample: ${match[2] || 'No sample available'}`;
-                } else {
-                    sampleDiv.textContent = '';
-                }
+                // Search all sections for the sample value
+                let sampleValue = '';
+                Object.keys(allDbFields).forEach(sectionKey => {
+                    const fields = allDbFields[sectionKey] || [];
+                    const match = fields.find(([fieldName]) => fieldName === selectedField);
+                    if (match) {
+                        sampleValue = match[2] || 'No sample available';
+                    }
+                });
+                sampleDiv.textContent = sampleValue ? `Sample: ${sampleValue}` : '';
             }
 
             // Initial
@@ -302,6 +336,35 @@ document.addEventListener('DOMContentLoaded', function () {
             input.placeholder = 'Static Value';
             input.value = selectedSource || '';
             container.appendChild(input);
+        }
+        else if (sourceType === 'template') {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.classList.add('form-control', 'mb-2');
+            input.placeholder = 'Template string, e.g., vm_p_{document.document_id}_{page.tk_page_id}';
+            input.value = selectedSource || '';
+            container.appendChild(input);
+
+            // Add help text with available fields
+            const helpDiv = document.createElement('div');
+            helpDiv.classList.add('mt-2', 'text-muted', 'small');
+            helpDiv.innerHTML = `
+                <strong>Template Syntax:</strong><br>
+                Use {field_name} for placeholders. Available fields:<br>
+                <ul class="mb-0">
+                    <li><code>{project.id}</code> - Mosaic Project ID</li>
+                    <li><code>{project.collection_id}</code> - Transkribus Collection ID</li>
+                    <li><code>{project.title}</code> - Project Title</li>
+                    <li><code>{document.id}</code> - Mosaic Document ID</li>
+                    <li><code>{document.document_id}</code> - Transkribus Document ID</li>
+                    <li><code>{document.title}</code> - Document Title</li>
+                    <li><code>{page.id}</code> - Mosaic Page ID</li>
+                    <li><code>{page.tk_page_id}</code> - Transkribus Page ID</li>
+                    <li><code>{page.tk_page_number}</code> - Page Number</li>
+                </ul>
+                <strong>Example:</strong> <code>vm_p_{document.id}_{page.id}</code>
+            `;
+            container.appendChild(helpDiv);
         }
         else if (sourceType === 'text_content') {
             const select = document.createElement('select');

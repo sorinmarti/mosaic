@@ -40,7 +40,7 @@ $(document).ready(function () {
       taskFunction = () => (window.location.href = redirectUrl); // Redirect to the specified URL
     }
     if (startTaskUrl) {
-      // Delete the metadata key from entry
+      // Delete a single metadata key from entry
       if(button.data('delete-md-key')) {
         const key = button.data('delete-md-key');
 
@@ -58,6 +58,20 @@ $(document).ready(function () {
             const entry = document.getElementById('metadata-' + key);
             if (entry) entry.remove();
           });
+        };
+      }
+      // Delete an entire metadata section (base key)
+      else if (button.attr('data-delete-base-key')) {
+        taskFunction = () => {
+          fetch(startTaskUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({ key: '' }),
+          })
+          .finally(() => location.reload());
         };
       }
       // Start the Celery task
