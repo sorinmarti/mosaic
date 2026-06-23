@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 
-from twf.clients.geonames_client import search_location
+from twf.clients.geonames_client import search_location, lookup_by_id
 from twf.clients.gnd_client import search_gnd
 from twf.clients.wikidata_client import search_wikidata_entities
 from twf.models import Dictionary, DictionaryEntry, PageTag, Variation
@@ -247,24 +247,31 @@ def search_entry_geonames(request, pk):
     project = TWFView.s_get_project(request)
 
     data = json.loads(request.body) if request.body else {}
+    geoname_id = data.get('geoname_id') or None
     search_term = data.get('search_term') or entry.label
+    country_bias = data.get('country_bias') or None
     country = data.get('country') or None
-    threshold = int(data.get('threshold', 80))
+    feature_class = data.get('feature_class') or None
 
     geonames_username = project.get_credentials('geonames').get('username', '')
     if not geonames_username:
         return JsonResponse({'error': 'Geonames username not configured in project settings.'}, status=400)
 
     try:
-        raw = search_location(search_term, geonames_username, False, country, threshold)
+        if geoname_id:
+            place = lookup_by_id(geoname_id, geonames_username)
+            results = [place] if place else []
+        else:
+            results = search_location(
+                search_term, geonames_username,
+                country_bias=country_bias,
+                country=country,
+                feature_class=feature_class,
+            )
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=500)
 
-    if not raw:
-        return JsonResponse({'results': []})
-
-    results = [{'data': loc, 'similarity': sim} for loc, sim in raw]
-    return JsonResponse({'results': results})
+    return JsonResponse({'results': results or []})
 
 
 @login_required

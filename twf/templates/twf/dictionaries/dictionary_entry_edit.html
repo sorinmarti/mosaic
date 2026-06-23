@@ -167,26 +167,51 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Search Geonames</h5>
+                    <h5 class="modal-title">Search GeoNames</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row g-2 align-items-end mb-3">
+                    {# — search by term — #}
+                    <div class="row g-2 align-items-end mb-2">
                         <div class="col-5">
-                            <label class="form-label">Search term</label>
+                            <label class="form-label">Search term <small class="text-muted">(any language)</small></label>
                             <input type="text" class="form-control" id="geo-search-term" value="{{ entry.label }}">
                         </div>
                         <div class="col-3">
-                            <label class="form-label">Country <small class="text-muted">(ISO-3166)</small></label>
-                            <input type="text" class="form-control" id="geo-country" placeholder="e.g. DE">
+                            <label class="form-label">Feature class</label>
+                            <select class="form-select" id="geo-feature-class">
+                                <option value="">All types</option>
+                                <option value="P">Populated place (P)</option>
+                                <option value="H">Hydrographic / river (H)</option>
+                                <option value="T">Mountain / hill (T)</option>
+                                <option value="A">Administrative (A)</option>
+                                <option value="L">Landscape (L)</option>
+                                <option value="S">Spot / building (S)</option>
+                                <option value="R">Road / railroad (R)</option>
+                                <option value="V">Vegetation (V)</option>
+                            </select>
                         </div>
                         <div class="col-2">
-                            <label class="form-label">Threshold</label>
-                            <input type="number" class="form-control" id="geo-threshold" value="80">
+                            <label class="form-label">Country bias <small class="text-muted">(ISO)</small></label>
+                            <input type="text" class="form-control" id="geo-country-bias" placeholder="e.g. DE">
                         </div>
                         <div class="col-2">
-                            <button type="button" class="btn btn-dark w-100" onclick="searchProvider('geonames')">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-dark w-100 d-block" onclick="searchProvider('geonames')">
                                 <i class="fa fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    {# — OR look up by ID — #}
+                    <div class="row g-2 align-items-end mb-3 border-top pt-2">
+                        <div class="col-4">
+                            <label class="form-label">— or enter GeoNames ID directly</label>
+                            <input type="number" class="form-control" id="geo-id" placeholder="e.g. 2921044">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-outline-dark d-block" onclick="searchProvider('geonames_id')">
+                                <i class="fa fa-id-card"></i> Fetch by ID
                             </button>
                         </div>
                     </div>
@@ -397,9 +422,10 @@
 
     // ── Search-and-select (Geonames, GND, Wikidata) ───────────────
     const SEARCH_URLS = {
-        geonames: "{% url 'twf:search_entry_geonames' entry.pk %}",
-        gnd:      "{% url 'twf:search_entry_gnd' entry.pk %}",
-        wikidata: "{% url 'twf:search_entry_wikidata' entry.pk %}",
+        geonames:    "{% url 'twf:search_entry_geonames' entry.pk %}",
+        geonames_id: "{% url 'twf:search_entry_geonames' entry.pk %}",
+        gnd:         "{% url 'twf:search_entry_gnd' entry.pk %}",
+        wikidata:    "{% url 'twf:search_entry_wikidata' entry.pk %}",
     };
     const SAVE_LOOKUP_URL = "{% url 'twf:save_entry_lookup' entry.pk %}";
 
@@ -408,13 +434,19 @@
 
     function searchProvider(provider) {
         const payload = {};
+        // normalise: geonames_id still uses the geonames results div
+        const displayProvider = provider === 'geonames_id' ? 'geonames' : provider;
 
         if (provider === 'geonames') {
-            payload.search_term = document.getElementById('geo-search-term').value;
-            payload.country     = document.getElementById('geo-country').value;
-            payload.threshold   = document.getElementById('geo-threshold').value;
+            payload.search_term   = document.getElementById('geo-search-term').value;
+            payload.country_bias  = document.getElementById('geo-country-bias').value;
+            payload.feature_class = document.getElementById('geo-feature-class').value;
+        } else if (provider === 'geonames_id') {
+            const gid = document.getElementById('geo-id').value.trim();
+            if (!gid) { alert('Please enter a GeoNames ID.'); return; }
+            payload.geoname_id = gid;
         } else if (provider === 'gnd') {
-            payload.search_term       = document.getElementById('gnd-search-term').value;
+            payload.search_term         = document.getElementById('gnd-search-term').value;
             payload.earliest_birth_year = document.getElementById('gnd-earliest').value;
             payload.latest_birth_year   = document.getElementById('gnd-latest').value;
             payload.show_empty          = document.getElementById('gnd-show-empty').checked;
@@ -424,7 +456,7 @@
             payload.language    = document.getElementById('wd-language').value;
         }
 
-        const resultsDiv = document.getElementById(provider + '-results');
+        const resultsDiv = document.getElementById(displayProvider + '-results');
         resultsDiv.classList.remove('d-none');
         resultsDiv.innerHTML = '<p class="text-muted fst-italic"><i class="fa fa-spinner fa-spin"></i> Searching…</p>';
 
@@ -439,8 +471,8 @@
                 resultsDiv.innerHTML = `<div class="alert alert-danger">${resp.error}</div>`;
                 return;
             }
-            _searchResults[provider] = resp.results;
-            renderResults(provider, resp.results, resultsDiv);
+            _searchResults[displayProvider] = resp.results;
+            renderResults(displayProvider, resp.results, resultsDiv);
         })
         .catch(() => {
             resultsDiv.innerHTML = '<div class="alert alert-danger">Request failed.</div>';
@@ -458,10 +490,17 @@
             let label = '', details = '';
 
             if (provider === 'geonames') {
-                const d = result.data;
-                label   = d.name || '';
-                details = [d.country, `${result.similarity}% match`, `lat ${d.lat} / lng ${d.lng}`]
-                            .filter(Boolean).join(' · ');
+                label = result.name || '';
+                if (result.ascii_name && result.ascii_name !== result.name)
+                    label += ` <span class="text-muted">(${result.ascii_name})</span>`;
+                const type = result.fcode_name
+                    ? `${result.fcl_name} · <code>${result.fcode}</code>`
+                    : result.fcl_name || '';
+                const place = [result.admin1, result.country].filter(Boolean).join(', ');
+                const coords = (result.lat && result.lng)
+                    ? `${parseFloat(result.lat).toFixed(4)}, ${parseFloat(result.lng).toFixed(4)}`
+                    : '';
+                details = [type, place, coords].filter(Boolean).join(' &nbsp;·&nbsp; ');
             } else if (provider === 'gnd') {
                 label   = (result.preferred_name || []).join(', ') || '(no name)';
                 const birth = (result.birth_date || []).join(', ');
@@ -493,13 +532,11 @@
 
     function selectResult(provider, index) {
         const data = _searchResults[provider][index];
-        // For Geonames the result is {data: {...}, similarity: N}; save only the inner data dict.
-        const saveData = (provider === 'geonames') ? data.data : data;
 
         fetch(SAVE_LOOKUP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-            body: JSON.stringify({ provider, data: saveData }),
+            body: JSON.stringify({ provider, data }),
         })
         .then(r => r.json())
         .then(resp => {

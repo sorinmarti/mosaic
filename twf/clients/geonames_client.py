@@ -1,58 +1,136 @@
-""" This module contains functions to search for locations using the GeoNames API"""
+"""Functions to search and fetch locations using the GeoNames API."""
 
-from geopy.geocoders import GeoNames
-from fuzzywuzzy import fuzz
+import requests
+
+GEONAMES_SEARCH_URL = "http://api.geonames.org/searchJSON"
+GEONAMES_GET_URL = "http://api.geonames.org/getJSON"
+
+FEATURE_CLASSES = {
+    "A": "Administrative division",
+    "H": "Hydrographic (rivers, lakes…)",
+    "L": "Landscape",
+    "P": "Populated place",
+    "R": "Road / railroad",
+    "S": "Spot, building, farm",
+    "T": "Mountain, hill, rock",
+    "U": "Undersea",
+    "V": "Vegetation",
+}
+
+
+def _parse_place(place):
+    """Extract the fields we care about from a raw GeoNames place dict."""
+    return {
+        "id": place.get("geonameId", ""),
+        "name": place.get("name", ""),
+        "ascii_name": place.get("asciiName", ""),
+        "country": place.get("countryName", ""),
+        "country_code": place.get("countryCode", ""),
+        "admin1": place.get("adminName1", ""),
+        "lat": place.get("lat", ""),
+        "lng": place.get("lng", ""),
+        "fcode": place.get("fcode", ""),
+        "fcode_name": place.get("fcodeName", ""),
+        "fcl": place.get("fcl", ""),
+        "fcl_name": FEATURE_CLASSES.get(place.get("fcl", ""), place.get("fcl", "")),
+        "population": place.get("population", 0),
+    }
 
 
 def search_location(
-    query, geonames_username, exactly_one=False, country=None, threshold=80
+    query,
+    geonames_username,
+    exactly_one=False,
+    country_bias=None,
+    country=None,
+    feature_class=None,
+    max_rows=15,
 ):
-    """Search for a location using the GeoNames API
-    :param query: the location query
-    :param geonames_username: the GeoNames username
-    :param exactly_one: return only one location
-    :param country: the country code
-    :param threshold: the similarity threshold
-    :return: a list of clean locations
+    """Search GeoNames by name/query string.
+
+    Parameters
+    ----------
+    query : str
+        Search term (any language / transliteration — GeoNames searches alternate names).
+    geonames_username : str
+        GeoNames account username.
+    exactly_one : bool
+        Return only the first result.
+    country_bias : str or None
+        ISO-3166 two-letter code to rank results from this country first.
+    country : str or None
+        Restrict results to this country only.
+    feature_class : str or None
+        One of A, H, L, P, R, S, T, U, V.
+    max_rows : int
+        Maximum number of results to return.
+
+    Returns
+    -------
+    list of dict
+        Each dict has id, name, country, lat, lng, fcode, fcode_name, fcl, fcl_name, etc.
+        Returns an empty list if nothing found.
     """
-    geolocator = GeoNames(username=geonames_username)
+    params = {
+        "q": query,
+        "maxRows": 1 if exactly_one else max_rows,
+        "username": geonames_username,
+        "type": "json",
+        "style": "FULL",
+    }
+    if country_bias:
+        params["countryBias"] = country_bias
+    if country:
+        params["country"] = country
+    if feature_class:
+        params["featureClass"] = feature_class
 
-    location = geolocator.geocode(query, exactly_one=exactly_one, country=country)
-    if location:
-        if isinstance(location, list):
-            clean_locations = clean_location(location, query, threshold)
-            return clean_locations
+    try:
+        resp = requests.get(GEONAMES_SEARCH_URL, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"GeoNames API error: {exc}") from exc
 
-        clean_locations = clean_location(
-            [
-                location,
-            ],
-            query,
-            threshold,
-        )
-        return clean_locations
+    if "status" in data:
+        raise RuntimeError(data["status"].get("message", "GeoNames error"))
 
-    return None
+    places = data.get("geonames", [])
+    results = [_parse_place(p) for p in places]
+
+    if exactly_one:
+        return results[0] if results else None
+    return results
 
 
-def clean_location(locations, original_query, threshold=80):
-    """Clean the locations based on the similarity ratio with the original query
-    :param locations: a list of locations
-    :param original_query: the original search query
-    :param threshold: the similarity threshold
-    :return: a list of clean locations
+def lookup_by_id(geoname_id, geonames_username):
+    """Fetch a single GeoNames entry by its numeric ID.
+
+    Parameters
+    ----------
+    geoname_id : int or str
+        The GeoNames ID.
+    geonames_username : str
+        GeoNames account username.
+
+    Returns
+    -------
+    dict or None
+        Parsed place dict, or None if not found.
     """
+    params = {
+        "geonameId": geoname_id,
+        "username": geonames_username,
+        "style": "FULL",
+    }
+    try:
+        resp = requests.get(GEONAMES_GET_URL, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.RequestException as exc:
+        raise RuntimeError(f"GeoNames API error: {exc}") from exc
 
-    clean_locations = []
-    for location in locations:
-        similarity_ratio = fuzz.ratio(location.raw["name"], original_query)
-        if similarity_ratio > int(threshold):
-            c_location = {
-                "id": location.raw.get("geonameId", "Error getting Id"),
-                "name": location.raw.get("name", "Error getting name"),
-                "country": location.raw.get("countryName", ""),
-                "lat": location.latitude,
-                "lng": location.longitude,
-            }
-            clean_locations.append((c_location, similarity_ratio))
-    return clean_locations
+    if "status" in data:
+        raise RuntimeError(data["status"].get("message", "GeoNames error"))
+
+    return _parse_place(data)
